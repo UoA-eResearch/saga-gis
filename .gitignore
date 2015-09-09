@@ -1,5 +1,12 @@
 *.user
 *.opensdf
 *.sdf
+*.tlog
+*.obj
+*.lastbuildstate
+*.log
+*.unsuccessfulbuild
+*.cache
+*.pdb
 saga-gis/bin
 saga-gis/src/ipch

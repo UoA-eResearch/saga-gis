@@ -21,7 +21,7 @@ MODULETEMPLATE=My_Module
 
 MYMODLIB=$1
 MYMODULE=$2
-MYMODLIBDIR=../modules_contrib/$MYMODLIB
+MYMODLIBDIR=../modules/contrib/$MYMODLIB
 
 # create custom dir with custom named files:
 mkdir $MYMODLIBDIR
