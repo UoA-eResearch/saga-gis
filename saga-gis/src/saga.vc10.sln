@@ -193,6 +193,10 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "imagery_maxent", "modules\i
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sim_rivflow", "modules\simulation\sim_rivflow\sim_rivflow.vcxproj", "{7E3ED7B3-7336-4BB3-8E0E-E119B28377B9}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "contrib_uoa_eresearch", "modules\contrib\contrib_uoa_eresearch\contrib_uoa_eresearch.vcxproj", "{093AB878-0449-48F3-B92A-40B352E660F0}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "contrib_taudem", "modules\contrib\contrib_taudem\contrib_taudem.vcxproj", "{5A01B0C3-3E53-48B2-AC90-1EC3A65DDE2A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -809,6 +813,22 @@ Global
 		{7E3ED7B3-7336-4BB3-8E0E-E119B28377B9}.Release|Win32.Build.0 = Release|Win32
 		{7E3ED7B3-7336-4BB3-8E0E-E119B28377B9}.Release|x64.ActiveCfg = Release|x64
 		{7E3ED7B3-7336-4BB3-8E0E-E119B28377B9}.Release|x64.Build.0 = Release|x64
+		{093AB878-0449-48F3-B92A-40B352E660F0}.Debug|Win32.ActiveCfg = Debug|Win32
+		{093AB878-0449-48F3-B92A-40B352E660F0}.Debug|Win32.Build.0 = Debug|Win32
+		{093AB878-0449-48F3-B92A-40B352E660F0}.Debug|x64.ActiveCfg = Debug|x64
+		{093AB878-0449-48F3-B92A-40B352E660F0}.Debug|x64.Build.0 = Debug|x64
+		{093AB878-0449-48F3-B92A-40B352E660F0}.Release|Win32.ActiveCfg = Release|Win32
+		{093AB878-0449-48F3-B92A-40B352E660F0}.Release|Win32.Build.0 = Release|Win32
+		{093AB878-0449-48F3-B92A-40B352E660F0}.Release|x64.ActiveCfg = Release|x64
+		{093AB878-0449-48F3-B92A-40B352E660F0}.Release|x64.Build.0 = Release|x64
+		{5A01B0C3-3E53-48B2-AC90-1EC3A65DDE2A}.Debug|Win32.ActiveCfg = Debug|Win32
+		{5A01B0C3-3E53-48B2-AC90-1EC3A65DDE2A}.Debug|Win32.Build.0 = Debug|Win32
+		{5A01B0C3-3E53-48B2-AC90-1EC3A65DDE2A}.Debug|x64.ActiveCfg = Debug|x64
+		{5A01B0C3-3E53-48B2-AC90-1EC3A65DDE2A}.Debug|x64.Build.0 = Debug|x64
+		{5A01B0C3-3E53-48B2-AC90-1EC3A65DDE2A}.Release|Win32.ActiveCfg = Release|Win32
+		{5A01B0C3-3E53-48B2-AC90-1EC3A65DDE2A}.Release|Win32.Build.0 = Release|Win32
+		{5A01B0C3-3E53-48B2-AC90-1EC3A65DDE2A}.Release|x64.ActiveCfg = Release|x64
+		{5A01B0C3-3E53-48B2-AC90-1EC3A65DDE2A}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
