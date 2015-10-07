@@ -99,6 +99,7 @@ CSG_String Get_Info(int i)
 #include "test_stream_power_model.h"
 #include "SBMBL.h"
 #include "Life_test.h"
+#include "RemoteJobSubmission.h"
 
 
 //---------------------------------------------------------
@@ -117,6 +118,7 @@ CSG_Module *		Create_Module(int i)
 	case 1:		return( new Ctest_stream_power_model );
 	case 2:		return( new CSBMBL );
 	case 3:		return( new CLife);
+	case 4:		return( new CRemoteJobSubmission);
 
 	default:	return( NULL );
 	}

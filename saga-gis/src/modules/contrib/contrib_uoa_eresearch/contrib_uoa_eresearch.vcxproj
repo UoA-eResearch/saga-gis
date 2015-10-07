@@ -314,6 +314,7 @@
     <ClInclude Include="Dunes.h" />
     <ClInclude Include="Life_test.h" />
     <ClInclude Include="MLB_Interface.h" />
+    <ClInclude Include="RemoteJobSubmission.h" />
     <ClInclude Include="SBMBL.h" />
     <ClInclude Include="stream_power_model.h" />
     <ClInclude Include="test_stream_power_model.h" />
@@ -322,6 +323,7 @@
     <ClCompile Include="Dunes.cpp" />
     <ClCompile Include="Life_test.cpp" />
     <ClCompile Include="MLB_Interface.cpp" />
+    <ClCompile Include="RemoteJobSubmission.cpp" />
     <ClCompile Include="SBMBL.cpp" />
     <ClCompile Include="stream_power_model.cpp" />
     <ClCompile Include="test_stream_power_model.cpp" />

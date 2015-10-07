@@ -83,6 +83,9 @@
     <ClInclude Include="SBMBL.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="RemoteJobSubmission.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="MLB_Interface.cpp">
@@ -101,6 +104,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="SBMBL.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="RemoteJobSubmission.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
