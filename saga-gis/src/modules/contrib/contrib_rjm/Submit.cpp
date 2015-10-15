@@ -1,13 +1,10 @@
-#include "RemoteJobSubmission.h"
+#include "Submit.h"
 #include <cstdlib>
-#ifdef _WIN32
-#include <Windows.h>
-#endif
 
 
-CRemoteJobSubmission::CRemoteJobSubmission(void)
+CSubmit::CSubmit(void)
 {
-	Set_Name(_TL("Remote Job Submission"));
+	Set_Name(_TL("Submit"));
 	Set_Author		(SG_T("Sina Masoud-Ansari"));
 	Set_Description	(_TW("Remote job submission tools"));
 
@@ -19,12 +16,19 @@ CRemoteJobSubmission::CRemoteJobSubmission(void)
 
 	RJMConfigure = SG_File_Make_Path(RJMBinDir, CSG_String("rjm_configure"), CSG_String("exe"));
 	RJMConfigure = SG_File_Get_Path_Absolute(RJMConfigure);
+
+	Parameters.Add_String(NULL, "JOB_NAME", _TL("Job Name"), _TL("A name used identify the job"), JobName, PARAMETER_INPUT);
+	Parameters.Add_FilePath(NULL, "UPLOADS", _TL("Files to Upload"), _TL("List of files to upload for the job. These will be copied to the remote file system. Use CTRL or SHIFT to select multiple files."), NULL, false, false, false, true); 
+
+
+
+
 }
 
 
-CRemoteJobSubmission::~CRemoteJobSubmission(void){}
+CSubmit::~CSubmit(void){}
 
-bool CRemoteJobSubmission::On_Execute(void)
+bool CSubmit::On_Execute(void)
 {
 	if (!ConfigExists())
 	{
@@ -34,10 +38,13 @@ bool CRemoteJobSubmission::On_Execute(void)
 			return Configure();
 		}
 	}
+
+	Parameters("UPLOADS")->asFilePath()->Get_FilePaths(Uploads);
+
 	return true;
 }
 
-bool CRemoteJobSubmission::ConfigExists()
+bool CSubmit::ConfigExists()
 {
 #ifdef _WIN32
 	UserHomeDir = CSG_String(getenv("USERPROFILE"));
@@ -51,11 +58,11 @@ bool CRemoteJobSubmission::ConfigExists()
 	return SG_File_Exists(RJMConfigFilePath);
 }
 
-bool CRemoteJobSubmission::Configure()
+bool CSubmit::Configure()
 {
 	
 	CSG_String cmd = CSG_String::Format(SG_T("%s"), RJMConfigure.c_str());
-	Message_Add(CSG_String("Executing: '%s'") + cmd);
+	Message_Add(CSG_String("Executing: ") + cmd);
 
 	if (system(cmd.b_str()) != 0)
 	{
@@ -76,7 +83,7 @@ bool CRemoteJobSubmission::Configure()
 	return true;
 }
 
-void CRemoteJobSubmission::DisplayRJMLog()
+void CSubmit::DisplayRJMLog()
 {
 	if (!RJMLogFilePath.is_Empty() && SG_File_Exists(RJMLogFilePath))
 	{

@@ -1,13 +1,13 @@
-#ifndef HEADER_INCLUDED__REMOTEJOBSUBMISSION_H
-#define HEADER_INCLUDED__REMOTEJOBSUBMISSION_H
+#ifndef HEADER_INCLUDED__SUBMIT_H
+#define HEADER_INCLUDED__SUBMIT_H
 
 #include "MLB_Interface.h"
 
-class CRemoteJobSubmission : public CSG_Module
+class CSubmit : public CSG_Module
 {
 public:
-	CRemoteJobSubmission(void);
-	virtual ~CRemoteJobSubmission(void);
+	CSubmit(void);
+	virtual ~CSubmit(void);
 
 	//virtual bool			needs_GUI		(void)	{	return( true );	}
 
@@ -24,6 +24,9 @@ private:
 	CSG_String RJMLogFilePath;
 	CSG_String RJMBinDir;
 	CSG_String RJMConfigure;
+
+	CSG_String JobName;
+	CSG_Strings Uploads;
 
 	bool ConfigExists(void);
 	bool Configure(void);

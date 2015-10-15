@@ -1,5 +1,5 @@
 /**********************************************************
- * Version $Id: MLB_Interface.cpp 2281 2014-10-09 15:49:41Z oconrad $
+ * Version $Id$
  *********************************************************/
 
 ///////////////////////////////////////////////////////////
@@ -9,7 +9,7 @@
 //      System for Automated Geoscientific Analyses      //
 //                                                       //
 //                    Module Library:                    //
-//                       contrib_uoa_eresearch                        //
+//                       contrib_rjm                        //
 //                                                       //
 //-------------------------------------------------------//
 //                                                       //
@@ -72,22 +72,22 @@ CSG_String Get_Info(int i)
 	switch( i )
 	{
 	case MLB_INFO_Name:	default:
-		return( _TL("Examples") );
+		return( _TL("Remote Job Management") );
 
 	case MLB_INFO_Category:
 		return( _TL("University of Auckland") );
 
 	case MLB_INFO_Author:
-		return( SG_T("J. Tunnicliffe; S. Masoud-Ansari") );
+		return( SG_T("George Orwell (c) 1984") );
 
 	case MLB_INFO_Description:
-		return( _TL("Collection of tools for teaching environmental process modelling") );
+		return( _TL("I am a module library template.") );
 
 	case MLB_INFO_Version:
-		return( SG_T("0.1") );
+		return( SG_T("1.0") );
 
 	case MLB_INFO_Menu_Path:
-		return( _TL("University of Auckland|Examples") );
+		return( _TL("University of Auckland|Remote Job Management") );
 	}
 }
 
@@ -95,10 +95,7 @@ CSG_String Get_Info(int i)
 //---------------------------------------------------------
 // 3. Include the headers of your modules here...
 
-#include "stream_power_model.h"
-#include "test_stream_power_model.h"
-#include "SBMBL.h"
-#include "Life_test.h"
+#include "Submit.h"
 
 
 //---------------------------------------------------------
@@ -113,10 +110,7 @@ CSG_Module *		Create_Module(int i)
 
 	switch( i )
 	{
-	case 0:		return( new Cstream_power_model );
-	case 1:		return( new Ctest_stream_power_model );
-	case 2:		return( new CSBMBL );
-	case 3:		return( new CLife);
+	case 0:		return( new CSubmit );
 
 	default:	return( NULL );
 	}
