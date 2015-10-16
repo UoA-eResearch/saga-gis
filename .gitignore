@@ -8,7 +8,7 @@
 *.unsuccessfulbuild
 *.cache
 *.pdb
-*.vcxproj.filters
+*.filters
 *.dll
 *.exp
 *.lib
