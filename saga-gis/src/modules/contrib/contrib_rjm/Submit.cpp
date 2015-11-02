@@ -7,11 +7,22 @@ CSubmit::CSubmit(void)
 	Set_Author		(SG_T("Sina Masoud-Ansari"));
 	Set_Description	(_TW("Remote job submission tools"));
 
+#ifdef _WIN32
+	UserHomeDir = CSG_String(getenv("USERPROFILE"));
+#else
+	UserHomeDir = CSG_String(getenv("HOME"));
+#endif
+
 	// Common properties
 	RJMConfigDirName = CSG_String(".remote_jobs");
 	RJMConfigFilename = CSG_String("config.ini");
-	RJMLogFilePath = CSG_String();
 	RJMBinDir = SG_File_Make_Path(CSG_String("bin"), CSG_String("rjm"));
+
+	RJMJobList = SG_File_Make_Path(UserHomeDir, CSG_String("joblist"), CSG_String("txt"));
+	RJMJobList = SG_File_Get_Path_Absolute(RJMJobList);
+	
+	RJMLogFilePath = SG_File_Make_Path(RJMBinDir, CSG_String("rjmlog"), CSG_String("txt"));
+	RJMLogFilePath = SG_File_Get_Path_Absolute(RJMLogFilePath);
 
 	RJMConfigure = SG_File_Make_Path(RJMBinDir, CSG_String("rjm_configure"), CSG_String("exe"));
 	RJMConfigure = SG_File_Get_Path_Absolute(RJMConfigure);
@@ -19,10 +30,14 @@ CSubmit::CSubmit(void)
 	RJMRunRemote = SG_File_Make_Path(RJMBinDir, CSG_String("run_remote"), CSG_String("exe"));
 	RJMRunRemote = SG_File_Get_Path_Absolute(RJMRunRemote);
 
+	Parameters.Add_FilePath(NULL, "JOB_LIST", "Job List", _TL("File to keep track of current jobs"), NULL, false, false, false, false);
+	Parameters("JOB_LIST")->asFilePath()->Set_Value(RJMJobList);
+	
 	Parameters.Add_String(NULL, "JOB_NAME", _TL("Job Name"), _TL("A name used identify the job"), JobName, PARAMETER_INPUT);
+	Parameters.Add_FilePath(NULL, "JOB_DIR", _TL("Job Directory"), _TL("Directory used for storing job data"), NULL, false, false, true, false); 
 	Parameters.Add_FilePath(NULL, "UPLOADS", _TL("Files"), _TL("List of files to upload for the job. These will be copied to the remote file system. Use CTRL or SHIFT to select multiple files."), NULL, false, false, false, true); 
-
 	Parameters.Add_Choice(NULL, "MODULE", "Module","Select the module to be used in this job.","Refresh|None|");
+	Parameters.Add_Value(NULL, "WAIT", _TL("Wait for job completion?"),_TL("Note it is fine to and run the Wait tool instead."), PARAMETER_TYPE_Bool, true);
 }
 
 
@@ -42,9 +57,40 @@ bool CSubmit::On_Execute(void)
 	} else if (	Parameters("MODULE")->asInt() == 0 )
 	{
 		CSG_String modules = GetModules();
-		//Parameters("MODULE")->Set_Value(modules);
 		Parameters("MODULE")->asChoice()->Set_Items(modules);
 	} else {
+		// set the joblist file
+		RJMJobList = Parameters("JOB_LIST")->asFilePath()->asString();
+
+
+		// if job dir does not exist create
+		CSG_String JobDir = Parameters("JOB_DIR")->asFilePath()->asString();
+		JobDir = SG_File_Get_Path_Absolute(JobDir);
+		if (!SG_Dir_Exists(JobDir))
+		{
+			if (!SG_Dir_Create(JobDir))
+			{
+				Error_Set(CSG_String::Format(SG_T("%s: '%s' "), _TL("Failed to create directory"), JobDir.c_str()));
+				return false;
+			}
+		}
+
+		// create or append to jobslist file
+		if (SG_File_Exists(RJMJobFile))
+		{
+			// append
+		} 
+		else 
+		{
+			// create
+		}
+
+
+		// Module to use
+		CSG_String Module = Parameters("MODULE")->asChoice()->asString();
+
+		// files to upload
+		CSG_Strings Uploads;
 		Parameters("UPLOADS")->asFilePath()->Get_FilePaths(Uploads);
 	}
 
@@ -55,13 +101,6 @@ bool CSubmit::On_Execute(void)
 
 bool CSubmit::ConfigExists()
 {
-#ifdef _WIN32
-	UserHomeDir = CSG_String(getenv("USERPROFILE"));
-#else
-	UserHomeDir = CSG_String(getenv("HOME"));
-#endif
-
-
 	CSG_String RJMConfigDirPath = SG_File_Make_Path(UserHomeDir, RJMConfigDirName);
 	RJMConfigFilePath = SG_File_Make_Path(RJMConfigDirPath, RJMConfigFilename, CSG_String("ini"));
 	return SG_File_Exists(RJMConfigFilePath);

@@ -25,9 +25,9 @@ private:
 	CSG_String RJMBinDir;
 	CSG_String RJMConfigure;
 	CSG_String RJMRunRemote;
+	CSG_String RJMJobList;
 
 	CSG_String JobName;
-	CSG_Strings Uploads;
 
 	bool ConfigExists(void);
 	bool Configure(void);
