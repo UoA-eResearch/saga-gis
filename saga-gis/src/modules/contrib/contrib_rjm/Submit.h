@@ -24,6 +24,7 @@ private:
 	CSG_String RJMLogFilePath;
 	CSG_String RJMBinDir;
 	CSG_String RJMConfigure;
+	CSG_String RJMRunRemote;
 
 	CSG_String JobName;
 	CSG_Strings Uploads;
@@ -31,6 +32,7 @@ private:
 	bool ConfigExists(void);
 	bool Configure(void);
 	void DisplayRJMLog(void);
+	CSG_String GetModules(void);
 };
 
 
