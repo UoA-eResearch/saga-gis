@@ -310,6 +310,7 @@
     <ClInclude Include="..\..\..\saga_core\saga_api\table.h" />
     <ClInclude Include="..\..\..\saga_core\saga_api\tin.h" />
     <ClInclude Include="MLB_Interface.h" />
+    <ClInclude Include="SimpleIni.h" />
     <ClInclude Include="Submit.h" />
   </ItemGroup>
   <ItemGroup>
