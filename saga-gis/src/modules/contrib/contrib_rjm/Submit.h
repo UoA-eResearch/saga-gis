@@ -30,32 +30,55 @@ private:
 	CSG_String RJMConfigDirName;
 	CSG_String RJMConfigFilename;
 	CSG_String RJMConfigFilePath;
+
 	CSG_String RemoteHost;
 	CSG_String RemoteUser;
+	CSG_String SSHPrivKeyFile;
+	CSG_String SSHFingerprint;
+	CSG_String DefaultProjectCode;
+	CSG_String DefaultRemoteDirectory;
+	CSG_String RemotePrepareJob;
+	CSG_String RemoteSubmitJob;
+	CSG_String RemoteIsJobDone;
+	CSG_String RemoteGetJobStatuses;
+	CSG_String RemoteCancelJobs;
+
+	CSG_String UploadsFile;
+	CSG_String DownloadsFile;
+
+	int MaxAttempts;
+	double MinWait;
+	double MaxWait;
 
 	// job arguments
-	CSG_String RJMCMD;
 	CSG_String RJMLogFilePath;
-	CSG_String JobName;
 	CSG_String RemoteCommand;
 	CSG_String ProjectCode;
 	CSG_String RemoteDirectory;
 	CSG_String RJMJobList;
 	CSG_String Walltime;
-	int JobType, Tasks, CPUs, Memory;
-	// loglevel ...
+	CSG_String JobType;
+	CSG_String LogLevel;
+	CSG_String Module;
+	CSG_String JobDir;
+	CSG_String RJMUploads;
+	CSG_String RJMDownloads;
+	CSG_Strings FilesToUpload;
+	CSG_Strings FilesToDownload;
+	int Tasks, CPUs, Memory;
+	int Hours, Minutes, Seconds;
+	bool DownloadAll;
+
 	
-
-
-
-
-
-
+	// methods
+	void DisplayRJMLog(void);
+	void ReadConfig(void);
 	bool ConfigExists(void);
 	bool Configure(void);
-	void DisplayRJMLog(void);
+	bool GetParameterValues(void);
 	CSG_String GetModules(void);
-	void ReadConfig(void);
+
+
 };
 
 

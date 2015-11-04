@@ -306,7 +306,7 @@ copy ..\..\scripting\toolchains\*.xml $(OutDir)\modules\toolchains
     <ClCompile>
       <AdditionalOptions>/EHsc  %(AdditionalOptions)</AdditionalOptions>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>./..;.;$(WXWIN)/include;$(WXWIN)/lib/vc_x64_dll/mswud;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>./..;.;$(WXWIN)/include;$(WXWIN)/lib/vc_x64_d_dll/mswud;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_WINDOWS;NOPCH;WIN32;_DEBUG;__WXMSW__;WXUSINGDLL;__WXDEBUG__;_TYPEDEF_BYTE;_TYPEDEF_WORD;_SAGA_MSW;_SAGA_UNICODE;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -336,7 +336,7 @@ copy ..\..\scripting\toolchains\*.xml $(OutDir)\modules\toolchains
       <AdditionalDependencies>wxbase30ud_xml.lib;wxbase30ud_net.lib;wxmsw30ud_propgrid.lib;wxmsw30ud_html.lib;wxmsw30ud_aui.lib;wxmsw30ud_adv.lib;wxmsw30ud_core.lib;wxbase30ud.lib;saga_api.lib;saga_gdi.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>$(OutDir)$(ProjectName).exe</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <AdditionalLibraryDirectories>$(WXWIN)/lib/vc_x64_dll;$(OutDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(WXWIN)/lib/vc_x64_d_dll;$(OutDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ProgramDatabaseFile>$(OutDir)$(ProjectName).pdb</ProgramDatabaseFile>
       <SubSystem>Windows</SubSystem>
