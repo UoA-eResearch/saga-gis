@@ -2,6 +2,13 @@
 #include "SimpleIni.h"
 #include <cstdlib>
 #include <cmath>
+#include <ctime>
+
+#ifdef _WIN32
+
+#else
+	#include <unistd.h>
+#endif
 
 CSubmit::CSubmit(void)
 {
@@ -9,11 +16,11 @@ CSubmit::CSubmit(void)
 	Set_Author		(SG_T("Sina Masoud-Ansari"));
 	Set_Description	(_TW("Remote job submission tools"));
 
-#ifdef _WIN32
-	UserHomeDir = CSG_String(getenv("USERPROFILE"));
-#else
-	UserHomeDir = CSG_String(getenv("HOME"));
-#endif
+	#ifdef _WIN32
+		UserHomeDir = CSG_String(getenv("USERPROFILE"));
+	#else
+		UserHomeDir = CSG_String(getenv("HOME"));
+	#endif
 
 	CSG_Parameter	*pNodeFiles;
 	CSG_Parameter	*pNodeWalltime;
@@ -33,8 +40,8 @@ CSubmit::CSubmit(void)
 
 	RJMJobList = SG_File_Make_Path(UserHomeDir, CSG_String("joblist"), CSG_String("txt"));
 	RJMJobList = SG_File_Get_Path_Absolute(RJMJobList);
-	
-	RJMLogFilePath = SG_File_Make_Path(RJMBinDir, CSG_String("rjmlog"), CSG_String("txt"));
+
+	RJMLogFilePath = SG_File_Make_Path(UserHomeDir, CSG_String("rjmlog"), CSG_String("txt"));
 	RJMLogFilePath = SG_File_Get_Path_Absolute(RJMLogFilePath);
 
 	RJMConfigure = SG_File_Make_Path(RJMBinDir, CSG_String("rjm_configure"), CSG_String("exe"));
@@ -46,9 +53,16 @@ CSubmit::CSubmit(void)
 	RJMBatchSubmit = SG_File_Make_Path(RJMBinDir, CSG_String("rjm_batch_submit"), CSG_String("exe"));
 	RJMBatchSubmit = SG_File_Get_Path_Absolute(RJMBatchSubmit);
 
+	RJMBatchWait = SG_File_Make_Path(RJMBinDir, CSG_String("rjm_batch_wait"), CSG_String("exe"));
+	RJMBatchWait = SG_File_Get_Path_Absolute(RJMBatchWait);
+
+	RJMBatchClean = SG_File_Make_Path(RJMBinDir, CSG_String("rjm_batch_clean"), CSG_String("exe"));
+	RJMBatchClean = SG_File_Get_Path_Absolute(RJMBatchClean);
+
 	// Params
 
 	Parameters.Add_FilePath(NULL, "JOB_LIST", "Job List", _TL("File to keep track of current jobs"), NULL, false, false, false, false);
+	//Parameters.Add_Value(NULL, "OVERWRITE", _TL("Overwrite Job List?"),_TL("When executed, this module will submit a job for echo directory listed in the job list."), PARAMETER_TYPE_Bool, true);
 	//Parameters.Add_String(NULL, "JOB_NAME", _TL("Job Name"), _TL("A name used identify the job"), JobName, PARAMETER_INPUT);
 	Parameters.Add_FilePath(NULL, "JOB_DIR", _TL("Job Directory"), _TL("Directory used for storing job files. This directory will be added to the job list so that job status can be tracked."), NULL, false, false, true, false); 
 	Parameters.Add_Choice(NULL, "MODULE", "Module","Select the module to be used in this job.","None|Refresh|");
@@ -59,6 +73,8 @@ CSubmit::CSubmit(void)
 	Parameters.Add_Value(NULL, "MEMORY"	, _TL("Memory (GB)"), _TL("Memory to use for the job in GB. For MPI Jobs this is the per process memory. For Single Process jobs, this is the total memory."), PARAMETER_TYPE_Int, 2, 1, true);
 	Parameters.Add_String(NULL, "PROJECT_CODE", _TL("Project Code"), _TL("Project code used for accounting job hours."), ProjectCode, PARAMETER_INPUT);
 	Parameters.Add_Value(NULL, "WAIT", _TL("Wait for job completion?"),_TL("Note it is fine to and run the Wait tool instead."), PARAMETER_TYPE_Bool, true);
+	Parameters.Add_Value(NULL, "POLLING_INTERVAL", _TL("Check Interval"), _TL("Seconds to wait before checking for job completion."), PARAMETER_TYPE_Int, 60, 10, true);
+	Parameters.Add_Value(NULL, "CLEAN", _TL("Clean up on completion?"),_TL("Deletes job files on remote system after they have been downloaded"), PARAMETER_TYPE_Bool, true);
 
 	// walltime
 	pNodeWalltime = Parameters.Add_Node(NULL, "WALLTIME", _TL("Walltime"), _TL("The time allowed for job completion"));
@@ -167,15 +183,24 @@ bool CSubmit::On_Execute(void)
 			}
 		}
 
-		// create or append to jobslist file
-		int mode = SG_FILE_W;
+		// check joblist file
 		if (SG_File_Exists(RJMJobList))
 		{
-			mode = SG_FILE_WA;
+			if (File.Open(RJMJobList, SG_FILE_R, false))
+			{
+				if (File.Length() != 0)
+				{
+					bool cont = Message_Dlg_Confirm(CSG_String::Format(SG_T("%s"), _TL("Overwrite existing job list file? Existing jobs will be lost")));
+					if (!cont)
+					{
+						return false;
+					}		
+				}
+			}
 		} 
 
 		// write jobdir to jobslist
-		if (File.Open(RJMJobList, mode, false))
+		if (File.Open(RJMJobList, SG_FILE_W, false))
 		{
 			File.Write(JobDir + CSG_String("\n"));
 			File.Flush();
@@ -232,6 +257,7 @@ bool CSubmit::On_Execute(void)
 		CSG_String ErrorFile = SG_File_Make_Path(RJMBinDir, CSG_String("error"), CSG_String("txt"));
 		ErrorFile = SG_File_Get_Path_Absolute(ErrorFile);
 
+		// bulid command string
 		bool ModuleIsNone = Module.is_Same_As(CSG_String("None"), true);
 		if (!ModuleIsNone)
 		{
@@ -239,37 +265,159 @@ bool CSubmit::On_Execute(void)
 			RemoteCommand = CSG_String::Format(SG_T("module load %s; %s"), Module.c_str(), RemoteCommand.c_str());
 		}
 
-		// command
-		CSG_String RJMCMD = CSG_String::Format(SG_T("%s -c\"%s\" -f \"%s\" -l \"%s\" -ll %s -w %s -m %dG -p %s -d \"%s\" -j %s"), RJMBatchSubmit.c_str(), RemoteCommand.c_str(), RJMJobList.c_str(), RJMLogFilePath.c_str(), LogLevel.c_str(), Walltime.c_str(), Memory, ProjectCode, RemoteDirectory.c_str(), JobType.c_str());
-		Message_Add(CSG_String("Executing: ") + RJMCMD);
-
-		/*
-		// run process
-		if (system(cmd.b_str()) != 0)
+		// download all if required
+		if (DownloadAll)
 		{
-			Error_Set(CSG_String::Format(SG_T("Error executing '%s' see Execution log for details"), cmd.c_str()));
-			// read log output
-			CSG_File File;
-			if (File.Open(RJMLogFilePath, SG_FILE_R, false))
-			{
-				CSG_String Line;
-				while (! File.is_EOF() && File.Read_Line(Line))
-				{
-					Message_Add(Line);
-				}
-				File.Close();
-			} else 
-			{
-				Message_Add(CSG_String("Unable to open " + RJMLogFilePath + CSG_String(" for reading")));
-			}
+			RemoteCommand.Append(";zip -R results.zip ./*");
 		}
-		*/
 
+		// command
+		CSG_String RJMCMD = CSG_String::Format(SG_T("%s -c \"%s\" -f \"%s\" -l \"%s\" -ll %s -w %s -m %dG -p %s -d \"%s\" -j %s"), RJMBatchSubmit.c_str(), RemoteCommand.c_str(), RJMJobList.c_str(), RJMLogFilePath.c_str(), LogLevel.c_str(), Walltime.c_str(), Memory, ProjectCode.c_str(), RemoteDirectory.c_str(), JobType.c_str());
+		Message_Add(CSG_String("Executing: ") + RJMCMD);
+		Process_Set_Text(CSG_String("Submitting job ..."));
+
+		
+		// run process
+		if (system(RJMCMD.b_str()) != 0)
+		{
+			Message_Dlg(CSG_String::Format(SG_T("Error submitting job, see Execution Log for details")));
+			DisplayRJMLog();
+			return false;
+		}
+
+		if (WaitForJob)
+		{
+			Message_Add(CSG_String("Submission succeeded, waiting for job completion..."));
+			Process_Set_Text(CSG_String("Waiting for job completion ..."));
+			#ifdef _WIN32
+				RJMCMD = CSG_String::Format(SG_T("cmd /c START %s -f \"%s\" -l \"%s\" -ll %s -z %d"), RJMBatchWait.c_str(), RJMJobList.c_str(), RJMLogFilePath.c_str(), LogLevel.c_str(), PollingInterval);
+				//RJMCMD = CSG_String::Format(SG_T("cmd /c START %s -f \"%s\" -ll info -z %d"), RJMBatchWait.c_str(), RJMJobList.c_str(), PollingInterval);
+			#else
+				RJMCMD = CSG_String::Format(SG_T("%s -f \"%s\" -l \"%s\" -ll %s -z %d &"), RJMBatchWait.c_str(), RJMJobList.c_str(), RJMLogFilePath.c_str(), LogLevel.c_str(), PollingInterval);
+			#endif
+			
+				
+			// wait
+			if (system(RJMCMD.b_str()) != 0)
+			{
+				Message_Dlg(CSG_String::Format(SG_T("Error while waiting for job completion, see Execution log for details")));
+				DisplayRJMLog();
+				return false;
+			}
+
+			// wait will run as non blocking as a separate process, so we will check the job ini file to see if it is done
+			clock_t tstart, tdiff;
+			double seconds, pcomplete;
+			tstart = clock();
+			
+			while (Process_Get_Okay(true) && !JobsDone(RJMJobList))
+			{
+				// set progress
+				tdiff = clock() - tstart;
+				seconds = tdiff/(double)CLOCKS_PER_SEC;
+				pcomplete = 100 * seconds / WalltimeAsSeconds;
+				Set_Progress( max( min(pcomplete, 90), 10) );
+
+				#ifdef _WIN32
+					Sleep(200);
+				#else
+					sleep(1); //untested
+				#endif
+			}
+			
+			if (Process_Get_Okay(false))
+			{
+				// only clean if wait was success
+				if (CleanJob)
+				{
+					
+					Message_Add(CSG_String("Results downloaded, cleaning up remote files ..."));
+					Process_Set_Text(CSG_String("Cleaning up remote files ..."));
+					RJMCMD = CSG_String::Format(SG_T("%s -f \"%s\" -l \"%s\" -ll %s"), RJMBatchClean.c_str(), RJMJobList.c_str(), RJMLogFilePath.c_str(), LogLevel.c_str());
+				
+					// clean
+					if (system(RJMCMD.b_str()) != 0)
+					{
+						Message_Dlg(CSG_String::Format(SG_T("Error while cleaning up remote files, see Execution Log for details")));
+						DisplayRJMLog();
+						return false;
+					}	
+				}
+			}
+			
+		}
 	}
-
-	
+	Set_Progress(100);
 
 	return true;
+}
+
+bool CSubmit::JobsDone(CSG_String joblist)
+{
+	bool alldone = false;
+	CSG_File File;
+	CSG_String jobdir;
+	CSG_String jobini;
+	CSG_String donestr;
+	CSimpleIniA ini;
+	ini.SetUnicode();
+
+	if (File.Open(joblist, SG_FILE_R, false))
+	{
+		while (! File.is_EOF() && File.Read_Line(jobdir))
+		{
+			jobdir.Trim();
+			if (!jobdir.is_Empty())
+			{
+				jobini = SG_File_Make_Path(jobdir, CSG_String(""), CSG_String("job.ini"));
+				if (SG_File_Exists(jobini))
+				{
+					// read ini file
+					ini.LoadFile(jobini.c_str());
+					donestr = CSG_String(ini.GetValue("JOB", "download_done", ""));	
+					alldone = donestr.is_Same_As(CSG_String("True"), true);
+					if (!alldone)
+					{
+						return false;
+					}
+				} 
+				else
+				{
+					Message_Add(CSG_String("Unable to open " + jobini + CSG_String(" for reading")));
+					Message_Dlg(CSG_String::Format(SG_T("Error while waiting for jobs to finish, see Execution Log for details")));
+					SG_UI_Process_Set_Okay(false);
+					Stop_Execution(false);
+					break;
+				}
+			}
+		}
+		File.Close();
+	} else 
+	{
+		Message_Add(CSG_String("Unable to open " + joblist + CSG_String(" for reading")));
+	}
+
+	return alldone;
+}
+
+void CSubmit::DisplayRJMLog()
+{
+	if (!RJMLogFilePath.is_Empty() && SG_File_Exists(RJMLogFilePath))
+	{
+		CSG_File File;
+		if (File.Open(RJMLogFilePath, SG_FILE_R, false))
+		{
+			CSG_String Line;
+			while (! File.is_EOF() && File.Read_Line(Line))
+			{
+				Message_Add(Line);
+			}
+			File.Close();
+		} else 
+		{
+			Message_Add(CSG_String("Unable to open " + RJMLogFilePath + CSG_String(" for reading")));
+		}
+	}
 }
 
 bool CSubmit::GetParameterValues()
@@ -317,16 +465,37 @@ bool CSubmit::GetParameterValues()
 	Minutes = Parameters("MINUTES")->asInt();
 	Seconds = Parameters("SECONDS")->asInt();
 	Walltime = CSG_String::Format(SG_T("%d:%d:%d"), Hours, Minutes, Seconds);
+	WalltimeAsSeconds = Hours * 3600 + Minutes * 60 + Seconds;
 
-	// job specs
+	// project code
+	ProjectCode = Parameters("PROJECT_CODE")->asString();
+	if (ProjectCode.is_Empty())
+	{
+		Message_Dlg(CSG_String::Format(SG_T("%s"), _TL("Project code is required.")));
+		return false;
+	}
+
+	// command
+	RemoteCommand = Parameters("COMMAND")->asString();
 	if (RemoteCommand.is_Empty())
 	{
-		bool cont = Message_Dlg_Confirm(CSG_String::Format(SG_T("%s"), _TL("No command has been specified, would you like to continue?")));
-		if (!cont)
-		{
-			return false;
-		}
+		Message_Dlg(CSG_String::Format(SG_T("%s"), _TL("Command string is required.")));
+		return false;
+
 	}
+
+	// remote dir
+	RemoteDirectory = Parameters("REMOTE_DIRECTORY")->asString();
+	if (RemoteDirectory.is_Empty())
+	{
+		Message_Dlg(CSG_String::Format(SG_T("%s"), _TL("Remote directory is required.")));
+		return false;
+	}
+	
+	// waiting
+	WaitForJob = Parameters("WAIT")->asBool();
+	PollingInterval = Parameters("POLLING_INTERVAL")->asInt();
+	CleanJob = Parameters("CLEAN")->asBool();
 
 	Module = Parameters("MODULE")->asChoice()->asString();
 	Tasks = Parameters("TASKS")->asInt();
@@ -335,7 +504,7 @@ bool CSubmit::GetParameterValues()
 	Memory = (int)(ceil(Memory / (double)Tasks));	// adapt memory to mem-per-cpu for SLURM
 
 	// job type
-	int jt = Parameters("JOB_TYPE")->asInt();
+	int jt = Parameters("JOBTYPE")->asInt();
 	if (jt == 0)
 	{
 		// single process
@@ -427,26 +596,6 @@ bool CSubmit::Configure()
 	}
 
 	return true;
-}
-
-void CSubmit::DisplayRJMLog()
-{
-	if (!RJMLogFilePath.is_Empty() && SG_File_Exists(RJMLogFilePath))
-	{
-		CSG_File File;
-		if (File.Open(RJMLogFilePath, SG_FILE_R, false))
-		{
-			CSG_String Line;
-			while (! File.is_EOF() && File.Read_Line(Line))
-			{
-				Message_Add(Line);
-			}
-			File.Close();
-		} else 
-		{
-			Message_Add(CSG_String("Unable to open " + RJMLogFilePath + CSG_String(" for reading")));
-		}
-	}
 }
 
 CSG_String CSubmit::GetModules()

@@ -25,6 +25,8 @@ private:
 	CSG_String RJMConfigure;
 	CSG_String RJMRunRemote;
 	CSG_String RJMBatchSubmit;
+	CSG_String RJMBatchWait;
+	CSG_String RJMBatchClean;
 
 	// config file
 	CSG_String RJMConfigDirName;
@@ -46,6 +48,7 @@ private:
 	CSG_String UploadsFile;
 	CSG_String DownloadsFile;
 
+	int PollingInterval;
 	int MaxAttempts;
 	double MinWait;
 	double MaxWait;
@@ -67,7 +70,10 @@ private:
 	CSG_Strings FilesToDownload;
 	int Tasks, CPUs, Memory;
 	int Hours, Minutes, Seconds;
+	int WalltimeAsSeconds;
 	bool DownloadAll;
+	bool WaitForJob;
+	bool CleanJob;
 
 	
 	// methods
@@ -76,6 +82,7 @@ private:
 	bool ConfigExists(void);
 	bool Configure(void);
 	bool GetParameterValues(void);
+	bool JobsDone(CSG_String joblist);
 	CSG_String GetModules(void);
 
 
