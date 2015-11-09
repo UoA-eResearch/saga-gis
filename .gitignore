@@ -8,5 +8,10 @@
 *.unsuccessfulbuild
 *.cache
 *.pdb
+*.filters
+*.dll
+*.exp
+*.lib
+*.suo
 saga-gis/bin
 saga-gis/src/ipch
