@@ -309,13 +309,19 @@
     <ClInclude Include="..\..\..\saga_core\saga_api\shapes.h" />
     <ClInclude Include="..\..\..\saga_core\saga_api\table.h" />
     <ClInclude Include="..\..\..\saga_core\saga_api\tin.h" />
+    <ClInclude Include="Cancel.h" />
+    <ClInclude Include="Clean.h" />
     <ClInclude Include="MLB_Interface.h" />
     <ClInclude Include="SimpleIni.h" />
     <ClInclude Include="Submit.h" />
+    <ClInclude Include="Wait.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Cancel.cpp" />
+    <ClCompile Include="Clean.cpp" />
     <ClCompile Include="MLB_Interface.cpp" />
     <ClCompile Include="Submit.cpp" />
+    <ClCompile Include="Wait.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
