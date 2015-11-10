@@ -14,7 +14,7 @@ CSubmit::CSubmit(void)
 {
 	Set_Name(_TL("Submit"));
 	Set_Author		(SG_T("Sina Masoud-Ansari"));
-	Set_Description	(_TW("Remote job submission tools"));
+	Set_Description	(_TW("Submit jobs to a remote cluster."));
 
 	#ifdef _WIN32
 		UserHomeDir = CSG_String(getenv("USERPROFILE"));
@@ -144,7 +144,7 @@ bool CSubmit::On_Execute(void)
 	} 
 	else
 	{
-		bool configure = Message_Dlg_Confirm(CSG_String::Format(SG_T("%s"), _TL("Remote Job Submission isn't configured, would you like to configure it now?")));
+		bool configure = Message_Dlg_Confirm(CSG_String::Format(SG_T("%s"), _TL("Remote Job Management Tools are not configured, would you like to configure it now?")));
 		if (configure)
 		{
 			if(Configure())

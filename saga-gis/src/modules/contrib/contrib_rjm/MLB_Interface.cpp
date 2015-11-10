@@ -96,7 +96,9 @@ CSG_String Get_Info(int i)
 // 3. Include the headers of your modules here...
 
 #include "Submit.h"
-
+#include "Wait.h"
+#include "Clean.h"
+#include "Cancel.h"
 
 //---------------------------------------------------------
 // 4. Allow your modules to be created here...
@@ -111,6 +113,9 @@ CSG_Module *		Create_Module(int i)
 	switch( i )
 	{
 	case 0:		return( new CSubmit );
+	case 1:		return( new CWait );
+	case 2:		return( new CClean );
+	case 3:		return( new CCancel );
 
 	default:	return( NULL );
 	}
