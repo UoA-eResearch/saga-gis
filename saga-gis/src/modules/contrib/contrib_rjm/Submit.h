@@ -9,7 +9,8 @@ public:
 	CSubmit(void);
 	virtual ~CSubmit(void);
 
-	//virtual bool			needs_GUI		(void)	{	return( true );	}
+	virtual CSG_String		Get_MenuPath	(void)	{	return( _TL("Submit") );	}
+	virtual bool			needs_GUI		(void)	{	return( true );	}
 
 protected:
 

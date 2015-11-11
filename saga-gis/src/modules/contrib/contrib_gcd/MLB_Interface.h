@@ -9,11 +9,11 @@
 //      System for Automated Geoscientific Analyses      //
 //                                                       //
 //                    Module Library:                    //
-//                       contrib_rjm                        //
+//                       contrib_gcd                        //
 //                                                       //
 //-------------------------------------------------------//
 //                                                       //
-//                   MLB_Interface.cpp                   //
+//                    MLB_Interface.h                    //
 //                                                       //
 //                 Copyright (C) 2007 by                 //
 //                        Author                         //
@@ -54,72 +54,23 @@
 
 ///////////////////////////////////////////////////////////
 //														 //
-//			The Module Link Library Interface			 //
+//														 //
 //														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-// 1. Include the appropriate SAGA-API header...
-
-#include "MLB_Interface.h"
-
+#ifndef HEADER_INCLUDED__contrib_gcd_MLB_Interface_H
+#define HEADER_INCLUDED__contrib_gcd_MLB_Interface_H
 
 //---------------------------------------------------------
-// 2. Place general module library informations here...
-
-CSG_String Get_Info(int i)
-{
-	switch( i )
-	{
-	case MLB_INFO_Name:	default:
-		return( _TL("Remote Job Management") );
-
-	case MLB_INFO_Category:
-		return( _TL("University of Auckland") );
-
-	case MLB_INFO_Author:
-		return( SG_T("Sina Masoud-Ansari") );
-
-	case MLB_INFO_Description:
-		return( _TL("Remote job submission tools for the University of Auckland cluster") );
-
-	case MLB_INFO_Version:
-		return( SG_T("1.0") );
-
-	case MLB_INFO_Menu_Path:
-		return( _TL("University of Auckland|Remote Job Management") );
-	}
-}
-
+#include <saga_api/saga_api.h>
 
 //---------------------------------------------------------
-// 3. Include the headers of your modules here...
-
-#include "Submit.h"
-#include "Wait.h"
-#include "Clean.h"
-#include "Cancel.h"
-
-//---------------------------------------------------------
-// 4. Allow your modules to be created here...
-
-CSG_Module *		Create_Module(int i)
-{
-	// Don't forget to continuously enumerate the case switches
-	// when adding new modules! Also bear in mind that the
-	// enumeration always has to start with [case 0:] and
-	// that [default:] must return NULL!...
-
-	switch( i )
-	{
-	case 0:		return( new CSubmit );
-	case 1:		return( new CWait );
-	case 2:		return( new CClean );
-	case 3:		return( new CCancel );
-
-	default:	return( NULL );
-	}
-}
+#ifdef contrib_gcd_EXPORTS
+	#define	contrib_gcd_EXPORT	_SAGA_DLL_EXPORT
+#else
+	#define	contrib_gcd_EXPORT	_SAGA_DLL_IMPORT
+#endif
 
 
 ///////////////////////////////////////////////////////////
@@ -129,8 +80,4 @@ CSG_Module *		Create_Module(int i)
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-//{{AFX_SAGA
-
-	MLB_INTERFACE
-
-//}}AFX_SAGA
+#endif // #ifndef HEADER_INCLUDED__contrib_gcd_MLB_Interface_H

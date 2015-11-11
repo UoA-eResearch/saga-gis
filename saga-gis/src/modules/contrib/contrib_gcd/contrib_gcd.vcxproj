@@ -19,8 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{5A01B0C3-3E53-48B2-AC90-1EC3A65DDE2A}</ProjectGuid>
-    <ProjectName>contrib_taudem</ProjectName>
+    <ProjectGuid>{992B02BB-F92A-4A95-935F-869551517102}</ProjectGuid>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
@@ -65,11 +64,11 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
     <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\..\..\bin\saga_vc_$(Platform)\modules\</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\..\..\bin\tmp\saga_vc_$(Platform)\$(ProjectName)\</IntDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\..\..\bin\saga_vc_$(Platform)_d\modules\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\..\..\bin\tmp\saga_vc_$(Platform)_d\$(ProjectName)\</IntDir>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</LinkIncremental>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\..\..\..\bin\saga_vc_$(Platform)\modules\</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\..\..\..\bin\tmp\saga_vc_$(Platform)\$(ProjectName)\</IntDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\..\..\..\bin\saga_vc_$(Platform)_d\modules\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\..\..\..\bin\tmp\saga_vc_$(Platform)_d\$(ProjectName)\</IntDir>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</LinkIncremental>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\..\..\bin\saga_vc_$(Platform)\modules\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\..\..\bin\tmp\saga_vc_$(Platform)\$(ProjectName)\</IntDir>
@@ -102,7 +101,7 @@
     </Midl>
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>..\..\..\..\src\saga_core;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(GDAL)\include;..\..\..\modules\io\io_gdal;..\..\..\saga_core;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_DEBUG;WIN32;_USRDLL;_MBCS;_TYPEDEF_BYTE;_TYPEDEF_WORD;_SAGA_MSW;_SAGA_VC;_SAGA_UNICODE;$(ProjectName)_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -123,10 +122,10 @@
       <Culture>0x0407</Culture>
     </ResourceCompile>
     <Link>
-      <AdditionalDependencies>saga_api.lib;gdal_i.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>saga_api.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>$(OutDir)$(ProjectName).dll</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <AdditionalLibraryDirectories>..\..\..\..\bin\saga_vc_$(Platform)\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\..\..\..\bin\saga_vc_$(Platform)_d\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ProgramDatabaseFile>$(OutDir)$(ProjectName).pdb</ProgramDatabaseFile>
       <SubSystem>Windows</SubSystem>
@@ -153,7 +152,7 @@
     </Midl>
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>$(GDAL)\include;..\..\..\saga_core;..\..\..\modules\io\io_gdal;..\..\..\src\saga_core;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(GDAL)\include;..\..\..\modules\io\io_gdal;..\..\..\saga_core;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_DEBUG;WIN32;_USRDLL;_MBCS;_TYPEDEF_BYTE;_TYPEDEF_WORD;_SAGA_MSW;_SAGA_VC;_SAGA_UNICODE;$(ProjectName)_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -174,10 +173,10 @@
       <Culture>0x0407</Culture>
     </ResourceCompile>
     <Link>
-      <AdditionalDependencies>saga_api.lib;gdal_i.lib;io_gdal.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>saga_api.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>$(OutDir)$(ProjectName).dll</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <AdditionalLibraryDirectories>$(GDAL)\lib;..\..\..\..\bin\saga_vc_$(Platform)_d\modules;$(SAGA)\bin\saga_vc_$(Platform)_d;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(GDAL)\lib;..\..\..\..\bin\saga_vc_$(Platform)_d\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ProgramDatabaseFile>$(OutDir)$(ProjectName).pdb</ProgramDatabaseFile>
       <SubSystem>Windows</SubSystem>
@@ -205,7 +204,7 @@
     <ClCompile>
       <Optimization>MaxSpeed</Optimization>
       <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
-      <AdditionalIncludeDirectories>..\..\..\src\saga_core;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(GDAL)\include;..\..\..\modules\io\io_gdal;..\..\..\saga_core;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>NDEBUG;WIN32;_USRDLL;_MBCS;_TYPEDEF_BYTE;_TYPEDEF_WORD;_SAGA_MSW;_SAGA_VC;_SAGA_UNICODE;$(ProjectName)_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
@@ -225,7 +224,7 @@
       <Culture>0x0407</Culture>
     </ResourceCompile>
     <Link>
-      <AdditionalDependencies>saga_api.lib;gdal_i.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>saga_api.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>$(OutDir)$(ProjectName).dll</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <AdditionalLibraryDirectories>..\..\..\..\bin\saga_vc_$(Platform)\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
@@ -255,7 +254,7 @@
     <ClCompile>
       <Optimization>MaxSpeed</Optimization>
       <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
-      <AdditionalIncludeDirectories>$(GDAL)\include;..\..\..\saga_core;..\..\..\modules\io\io_gdal;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(GDAL)\include;..\..\..\modules\io\io_gdal;..\..\..\saga_core;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>NDEBUG;WIN32;_USRDLL;_MBCS;_TYPEDEF_BYTE;_TYPEDEF_WORD;_SAGA_MSW;_SAGA_VC;_SAGA_UNICODE;$(ProjectName)_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
@@ -278,7 +277,7 @@
       <AdditionalDependencies>saga_api.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>$(OutDir)$(ProjectName).dll</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <AdditionalLibraryDirectories>..\..\..\..\bin\saga_vc_$(Platform)\modules;..\..\..\..\bin\saga_vc_$(Platform)\;$(GDAL)\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(GDAL)\lib;..\..\..\..\bin\saga_vc_$(Platform)\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <ProgramDatabaseFile>$(OutDir)$(ProjectName).pdb</ProgramDatabaseFile>
       <SubSystem>Windows</SubSystem>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
@@ -293,47 +292,29 @@
     </Bscmake>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\..\saga_core\saga_api\grid_pyramid.h" />
+    <ClInclude Include="..\..\..\saga_core\saga_api\metadata.h" />
+    <ClInclude Include="..\..\..\saga_core\saga_api\module_library.h" />
+    <ClInclude Include="..\..\..\saga_core\saga_api\pointcloud.h" />
+    <ClInclude Include="..\..\..\saga_core\saga_api\table_dbase.h" />
+    <ClInclude Include="..\..\..\saga_core\saga_api\table_value.h" />
+    <ClInclude Include="..\..\..\saga_core\saga_api\api_core.h" />
+    <ClInclude Include="..\..\..\saga_core\saga_api\dataobject.h" />
+    <ClInclude Include="..\..\..\saga_core\saga_api\geo_tools.h" />
+    <ClInclude Include="..\..\..\saga_core\saga_api\grid.h" />
+    <ClInclude Include="..\..\..\saga_core\saga_api\mat_tools.h" />
+    <ClInclude Include="..\..\..\saga_core\saga_api\module.h" />
+    <ClInclude Include="..\..\..\saga_core\saga_api\parameters.h" />
     <ClInclude Include="..\..\..\saga_core\saga_api\saga_api.h" />
-    <ClInclude Include="..\..\saga_core\saga_api\api_core.h" />
-    <ClInclude Include="..\..\saga_core\saga_api\dataobject.h" />
-    <ClInclude Include="..\..\saga_core\saga_api\geo_tools.h" />
-    <ClInclude Include="..\..\saga_core\saga_api\grid.h" />
-    <ClInclude Include="..\..\saga_core\saga_api\grid_pyramid.h" />
-    <ClInclude Include="..\..\saga_core\saga_api\mat_tools.h" />
-    <ClInclude Include="..\..\saga_core\saga_api\metadata.h" />
-    <ClInclude Include="..\..\saga_core\saga_api\module.h" />
-    <ClInclude Include="..\..\saga_core\saga_api\module_library.h" />
-    <ClInclude Include="..\..\saga_core\saga_api\parameters.h" />
-    <ClInclude Include="..\..\saga_core\saga_api\pointcloud.h" />
-    <ClInclude Include="..\..\saga_core\saga_api\shapes.h" />
-    <ClInclude Include="..\..\saga_core\saga_api\table.h" />
-    <ClInclude Include="..\..\saga_core\saga_api\table_dbase.h" />
-    <ClInclude Include="..\..\saga_core\saga_api\table_value.h" />
-    <ClInclude Include="..\..\saga_core\saga_api\tin.h" />
-    <ClInclude Include="D8ContributingArea.h" />
-    <ClInclude Include="DInfContributingArea.h" />
-    <ClInclude Include="DInfFlowDirection.h" />
-    <ClInclude Include="DropAnalysis.h" />
-    <ClInclude Include="D8FlowDirection.h" />
-    <ClInclude Include="GridNet.h" />
+    <ClInclude Include="..\..\..\saga_core\saga_api\shapes.h" />
+    <ClInclude Include="..\..\..\saga_core\saga_api\table.h" />
+    <ClInclude Include="..\..\..\saga_core\saga_api\tin.h" />
     <ClInclude Include="MLB_Interface.h" />
-    <ClInclude Include="PeukerDouglas.h" />
-    <ClInclude Include="PitRemove.h" />
-    <ClInclude Include="StreamNet.h" />
-    <ClInclude Include="Threshold.h" />
+    <ClInclude Include="dodstats.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="D8ContributingArea.cpp" />
-    <ClCompile Include="DInfContributingArea.cpp" />
-    <ClCompile Include="DInfFlowDirection.cpp" />
-    <ClCompile Include="DropAnalysis.cpp" />
-    <ClCompile Include="D8FlowDirection.cpp" />
-    <ClCompile Include="GridNet.cpp" />
     <ClCompile Include="MLB_Interface.cpp" />
-    <ClCompile Include="PeukerDouglas.cpp" />
-    <ClCompile Include="PitRemove.cpp" />
-    <ClCompile Include="StreamNet.cpp" />
-    <ClCompile Include="Threshold.cpp" />
+    <ClCompile Include="dodstats.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\io\io_gdal\io_gdal.vcxproj">

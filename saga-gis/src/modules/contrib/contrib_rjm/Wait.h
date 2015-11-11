@@ -9,7 +9,8 @@ public:
 	CWait(void);
 	virtual ~CWait(void);
 
-	//virtual bool			needs_GUI		(void)	{	return( true );	}
+	virtual CSG_String		Get_MenuPath	(void)	{	return( _TL("Wait") );	}
+	virtual bool			needs_GUI		(void)	{	return( true );	}
 
 protected:
 

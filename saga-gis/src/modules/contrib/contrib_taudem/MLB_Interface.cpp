@@ -60,19 +60,19 @@ CSG_String Get_Info(int i)
 		return( _TL("TauDEM") );
 
 	case MLB_INFO_Category:
-		return( _TL("TauDEM") );
+		return( _TL("University of Auckland") );
 
 	case MLB_INFO_Author:
-		return( SG_T("George Orwell (c) 1984") );
+		return( SG_T("Sina Masoud-Ansari") );
 
 	case MLB_INFO_Description:
-		return( _TL("I am a module library template.") );
+		return( _TL("Interface to the TauDEM suite of tools: http://hydrology.usu.edu/taudem/taudem5/index.html") );
 
 	case MLB_INFO_Version:
 		return( SG_T("1.0") );
 
 	case MLB_INFO_Menu_Path:
-		return( _TL("TauDEM") );
+		return( _TL("University of Auckland|TauDEM") );
 	}
 }
 
