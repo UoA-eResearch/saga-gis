@@ -13,7 +13,7 @@
 //                                                       //
 //-------------------------------------------------------//
 //                                                       //
-//                     dodstats.cpp                     //
+//                     dodthresholdprob.cpp                     //
 //                                                       //
 //                 Copyright (C) 2007 by                 //
 //                        Author                         //
@@ -59,7 +59,7 @@
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-#include "dodstats.h"
+#include "dodthresholdprob.h"
 
 
 
@@ -70,29 +70,36 @@
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-Cdodstats::Cdodstats(void)
+Cdodthresholdprob::Cdodthresholdprob(void)
 {
 	// Module info
-	Set_Name		(_TL("Statistics"));
+	Set_Name		(_TL("Probabilistic Threshold"));
 	Set_Author		(SG_T("Sina Masoud-Ansari"));
-	Set_Description	(_TW("Display area and volume of erosion/deposition for a DoD raster."));
+	Set_Description	(_TW("Threshold a DoD using probabilistic thresholding"));
 
 	// GCD setup
 	GCDBinDir = SG_File_Make_Path(CSG_String("bin"), CSG_String("GCD"));
 	GCDBinDir = SG_File_Get_Path_Absolute(GCDBinDir);
 	GCD = SG_File_Make_Path(GCDBinDir, CSG_String("gcd"), CSG_String("exe"));
-	GCD_CMD = CSG_String("dodstats");
+	GCD_CMD = CSG_String("dodthresholdprob");
 
 	// Logging
 	LogOutput = SG_File_Make_Path(GCDBinDir, CSG_String("out"), CSG_String("txt"));
 	LogError = SG_File_Make_Path(GCDBinDir, CSG_String("error"), CSG_String("txt"));;
 
 	// Grids
-	Parameters.Add_Grid(NULL, "DOD_INPUT"	, _TL("DoD"), _TL("Input grid to be used as DoD"), PARAMETER_INPUT);
-	DoD_InputPath = SG_File_Make_Path(GCDBinDir, CSG_String("dodinput"), CSG_String("tif"));
+	Parameters.Add_Grid(NULL, "DOD_INPUT"	, _TL("DoD"), _TL("Raster to be used as DoD"), PARAMETER_INPUT);
+	Parameters.Add_Grid(NULL, "NEW_SURVEYERROR"	, _TL("New Survey Error"), _TL("Error raster for new survey"), PARAMETER_INPUT);
+	Parameters.Add_Grid(NULL, "OLD_SURVEYERROR"	, _TL("Old Survey Error"), _TL("Error raster for old raster"), PARAMETER_INPUT);
+	Parameters.Add_Grid(NULL, "THRESHOLD_OUTPUT", _TL("Threshold Output"), _TL("Output threshold raster"), PARAMETER_OUTPUT);
+	Parameters.Add_Grid(NULL, "PRIORPROB_OUTPUT", _TL("Prior Probability Output"), _TL("Output prior probability raster"), PARAMETER_OUTPUT);
+	Parameters.Add_Value(NULL, "THRESHOLD_VALUE", _TL("Probability Threshold"), _TL("Probability threshold"), PARAMETER_TYPE_Double, 0.5, 0, true, 1, true);
 
-	// Tables
-	Parameters.Add_Table(NULL, "STATS_OUTPUT", _TL("DoD Output Statistics"), _TL("DoD Statistics"), PARAMETER_OUTPUT); 
+	DoD_InputPath = SG_File_Make_Path(GCDBinDir, CSG_String("dodinput"), CSG_String("tif"));
+	NewSurveyError_InputPath = SG_File_Make_Path(GCDBinDir, CSG_String("newsurveyerror"), CSG_String("tif"));
+	OldSurveyError_InputPath = SG_File_Make_Path(GCDBinDir, CSG_String("oldsurveyerror"), CSG_String("tif"));
+	Threshold_OutputPath = SG_File_Make_Path(GCDBinDir, CSG_String("theshoutput"), CSG_String("tif"));
+	PriorProb_OutputPath = SG_File_Make_Path(GCDBinDir, CSG_String("priorproboutput"), CSG_String("tif"));
 
 	//GDAL
 	GDALDriver = CSG_String("GTiff");
@@ -108,7 +115,7 @@ Cdodstats::Cdodstats(void)
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-bool Cdodstats::On_Execute(void)
+bool Cdodthresholdprob::On_Execute(void)
 {
 
 	if (!GetParameterValues())
@@ -117,16 +124,32 @@ bool Cdodstats::On_Execute(void)
 	}
 
 	// convert grids to tiffs for command input
-	CSG_Strings InputGridPaths = CSG_Strings();
+	CSG_Grid* InputGrids [3] = {DoD_Input, NewSurveyError_Input, OldSurveyError_Input};
 
-	CSG_Grid* InputGrids [1] = {DoD_Input};
-	InputGridPaths.Add(DoD_InputPath);
+	CSG_Strings InputGridPaths = CSG_Strings();
+	InputGridPaths.Add(NewSurveyError_InputPath);
+	InputGridPaths.Add(OldSurveyError_InputPath);
+
 	if (!SaveGridsAsTIFF(InputGrids, InputGridPaths))
 	{
 		return false;
 	}
 
-	CSG_String CMD = CSG_String::Format(SG_T("%s %s %s >%s 2>%s"), GCD.c_str(), GCD_CMD.c_str(), DoD_InputPath.c_str(), LogOutput.c_str(), LogError.c_str());
+	CSG_Strings OutputGridPaths = CSG_Strings();
+	OutputGridPaths.Add(Threshold_OutputPath);
+	OutputGridPaths.Add(PriorProb_OutputPath);
+
+	CSG_Strings OutputGridNames = CSG_Strings();
+	OutputGridNames.Add("Threshold");
+	OutputGridNames.Add("Prior Probability");
+
+	// delete old output files (GCD throws an error if a file already exists)
+	if (!DeleteFiles(OutputGridPaths))
+	{
+		return false;
+	}
+
+	CSG_String CMD = CSG_String::Format(SG_T("%s %s %s %s %s %s %s %f >%s 2>%s"), GCD.c_str(), GCD_CMD.c_str(), DoD_InputPath.c_str(), Threshold_OutputPath.c_str(), NewSurveyError_InputPath.c_str(), OldSurveyError_InputPath.c_str(), PriorProb_OutputPath.c_str(), ThresholdValue, LogOutput.c_str(), LogError.c_str());
 	Message_Add(CSG_String("Executing: ") + CMD);			
 	if (system(CMD.b_str()) != 0)
 	{
@@ -135,72 +158,90 @@ bool Cdodstats::On_Execute(void)
 		return false;
 	}	
 
-	CreateStatsTable();
+	CSG_Grid* OutputGrids [2] = {Threshold_Output, PriorProb_Output};
+	if (!LoadTIFFsAsGrids(OutputGridPaths, OutputGrids, OutputGridNames))
+	{
+		return false;
+	}
+	Parameters("THRESHOLD_OUTPUT")->Set_Value(Threshold_Output);
+	Parameters("PRIORPROB_OUTPUT")->Set_Value(PriorProb_Output);
+
+	ApplyColors(DoD_Input, Threshold_Output);
+	ApplyColors(DoD_Input, PriorProb_Output);
 
 	DisplayFile(LogOutput);
 	return true;
 }
 
-bool Cdodstats::CreateStatsTable()
+bool Cdodthresholdprob::DeleteFiles(CSG_Strings paths)
 {
-	// set up table
-	DoDStatsTable->Destroy();
-	DoDStatsTable->Set_Name("DoD Stats");
-
-	// set table fields
-	DoDStatsTable->Add_Field(SG_T("Area Erosion"), SG_DATATYPE_Double);
-	DoDStatsTable->Add_Field(SG_T("Area Deposition"), SG_DATATYPE_Double);
-	DoDStatsTable->Add_Field(SG_T("Vol Erosion"), SG_DATATYPE_Double);
-	DoDStatsTable->Add_Field(SG_T("Vol Deposition"), SG_DATATYPE_Double);
-
-	// read table data
-	CSG_File File;
-	if (File.Open(LogOutput, SG_FILE_R, false))
+	bool success = false;
+	for (int i = 0; i < paths.Get_Count(); i++)
 	{
-
-		if (File.Length() == 0)
+		success = DeleteFile(paths.Get_String(i));
+		if (!success)
 		{
-			Message_Add(CSG_String("Output file " + LogOutput + CSG_String(" is empty!")));
 			return false;
 		}
-		else
-		{
-			CSG_String Line;
-			CSG_Table_Record* Record = DoDStatsTable->Add_Record();
-
-			// skip first two lines
-			File.Read_Line(Line); File.Read_Line(Line);
-
-			// Area Erosion
-			File.Read_Line(Line); Line = Line.AfterFirst(':'); Line.Trim();
-			Record->Set_Value(0, Line.asDouble());
-
-			// Area Deposition
-			File.Read_Line(Line); Line = Line.AfterFirst(':'); Line.Trim();
-			Record->Set_Value(1, Line.asDouble());
-
-			// Vol Erosion
-			File.Read_Line(Line); Line = Line.AfterFirst(':'); Line.Trim();
-			Record->Set_Value(2, Line.asDouble());
-
-			// Vol Deposition
-			File.Read_Line(Line); Line = Line.AfterFirst(':'); Line.Trim();
-			Record->Set_Value(3, Line.asDouble());
-
-		}
-		File.Close();
 	}
-	else
+	return success;
+}
+
+bool Cdodthresholdprob::DeleteFile(CSG_String path)
+{
+	// Delete file if exists
+	if (SG_File_Exists(path))
 	{
-		Message_Add(CSG_String("Unable to open " + LogOutput + CSG_String(" for reading")));
+		if (!SG_File_Delete(path))
+		{
+			Error_Set(CSG_String::Format(SG_T("%s: '%s' "), _TL("Failed to delete file: "), path.c_str()));
+			return false;
+		}
+	}
+	return true;
+}
+
+void Cdodthresholdprob::ApplyColors(CSG_Grid* from, CSG_Grid* to)
+{
+		CSG_Colors colors;
+		DataObject_Get_Colors(from, colors);
+		DataObject_Set_Colors(to, colors);
+		DataObject_Update(to, false);	
+}
+
+bool Cdodthresholdprob::LoadTIFFsAsGrids(CSG_Strings tiffpaths, CSG_Grid** grids, CSG_Strings names)
+{
+	bool success = false;
+	for (int i = 0; i < tiffpaths.Get_Count(); i++)
+	{
+		success = LoadTIFFAsGrid(tiffpaths.Get_String(i), grids[i], names[i]);
+		if (!success)
+		{
+			return false;
+		}
+	}
+	return success;
+}
+
+bool Cdodthresholdprob::LoadTIFFAsGrid(CSG_String path, CSG_Grid* grid, CSG_String name)
+{
+
+	if( !GDALDataSet.Open_Read(path))
+	{
+		Error_Set(CSG_String::Format(SG_T("%s: '%s' "), _TL("Failed to open generated file: "), path.c_str()));
 		return false;
+	} 
+	else 
+	{
+		grid->Assign(GDALDataSet.Read(0));
+		grid->Set_Name(name);	
+		GDALDataSet.Close();
 	}
 
 	return true;
 }
 
-
-bool Cdodstats::SaveGridsAsTIFF(CSG_Grid** grids, CSG_Strings paths)
+bool Cdodthresholdprob::SaveGridsAsTIFF(CSG_Grid** grids, CSG_Strings paths)
 {
 	TSG_Data_Type Type;
 	CSG_String FilePath;
@@ -229,22 +270,27 @@ bool Cdodstats::SaveGridsAsTIFF(CSG_Grid** grids, CSG_Strings paths)
 	return true;
 }
 
-bool Cdodstats::GetParameterValues()
+bool Cdodthresholdprob::GetParameterValues()
 {
 
 	DoD_Input = Parameters("DOD_INPUT")->asGrid();
-	DoDStatsTable = Parameters("STATS_OUTPUT")->asTable();
+	NewSurveyError_Input = Parameters("NEW_SURVEYERROR")->asGrid();
+	NewSurveyError_Input = Parameters("OLD_SURVEYERROR")->asGrid();
+	Threshold_Output = Parameters("THRESHOLD_OUTPUT")->asGrid();
+	PriorProb_Output = Parameters("PRIORPROB_OUTPUT")->asGrid();
+	ThresholdValue = Parameters("THRESHOLD_VALUE")->asDouble();
 
 	return true;
+
 }
 
-void Cdodstats::DisplayLogs()
+void Cdodthresholdprob::DisplayLogs()
 {
 	DisplayFile(LogOutput);
 	DisplayFile(LogError);
 }
 
-void Cdodstats::DisplayFile(CSG_String path)
+void Cdodthresholdprob::DisplayFile(CSG_String path)
 {
 
 	if (SG_File_Exists(path))

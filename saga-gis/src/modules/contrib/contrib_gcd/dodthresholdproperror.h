@@ -13,7 +13,7 @@
 //                                                       //
 //-------------------------------------------------------//
 //                                                       //
-//                   MLB_Interface.cpp                   //
+//                      dodstats.h                      //
 //                                                       //
 //                 Copyright (C) 2007 by                 //
 //                        Author                         //
@@ -54,84 +54,65 @@
 
 ///////////////////////////////////////////////////////////
 //														 //
-//			The Module Link Library Interface			 //
+//														 //
 //														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-// 1. Include the appropriate SAGA-API header...
+#ifndef HEADER_INCLUDED__dodthresholdproperror_H
+#define HEADER_INCLUDED__dodthresholdproperror_H
 
+//---------------------------------------------------------
 #include "MLB_Interface.h"
+#include "gdal_driver.h"
 
 
-//---------------------------------------------------------
-// 2. Place general module library informations here...
-
-CSG_String Get_Info(int i)
+class Cdodthresholdproperror : public CSG_Module_Grid
 {
-	switch( i )
-	{
-	case MLB_INFO_Name:	default:
-		return( _TL("Geomorphic Change Detection") );
+public:
+	Cdodthresholdproperror(void);
 
-	case MLB_INFO_Category:
-		return( _TL("University of Auckland") );
-
-	case MLB_INFO_Author:
-		return( SG_T("Sina Masoud-Ansari") );
-
-	case MLB_INFO_Description:
-		return( _TL("Interface to the GCD commandline tools: http://gcd6help.joewheaton.org/") );
-
-	case MLB_INFO_Version:
-		return( SG_T("1.0") );
-
-	case MLB_INFO_Menu_Path:
-		return( _TL("University of Auckland|Geomorphic Change Detection") );
-	}
-}
+	virtual CSG_String			Get_MenuPath	(void)	{	return( _TL("DoD Stats") );	}
 
 
-//---------------------------------------------------------
-// 3. Include the headers of your modules here...
+protected:
 
-#include "dodstats.h"
-#include "dodstatsprob.h"
-#include "dodthresholdproperror.h"
-#include "dodthresholdprob.h"
+	virtual bool				On_Execute		(void);
+
+private:
+	// GCD
+	CSG_String GCDBinDir;
+	CSG_String GCD;
+	CSG_String GCD_CMD;
+
+	// LOGGING
+	CSG_String LogOutput;
+	CSG_String LogError;
+
+	// GRIDS
+	CSG_Grid* DoD_Input;
+	CSG_Grid* DoD_PropError;
+	CSG_Grid* DoD_Output;
+
+	CSG_String DoD_InputPath;
+	CSG_String DoD_PropErrorPath;
+	CSG_String DoD_OutputPath;
+
+	// GDAL
+	TSG_Data_Type Type;
+	CSG_String GDALDriver, GDALOptions;
+	CSG_Projection Projection;
+	CSG_GDAL_DataSet GDALDataSet;
+
+	void DisplayLogs(void);
+	void DisplayFile(CSG_String path);
+	void ApplyColors(CSG_Grid* from, CSG_Grid* to);
+	bool GetParameterValues(void);
+	bool SaveGridsAsTIFF(CSG_Grid** grid, CSG_Strings paths);
+	bool LoadTIFFAsGrid(CSG_String tiffpath, CSG_Grid* grid);
+	bool DeleteFile(CSG_String path);
+
+};
 
 
-//---------------------------------------------------------
-// 4. Allow your modules to be created here...
-
-CSG_Module *		Create_Module(int i)
-{
-	// Don't forget to continuously enumerate the case switches
-	// when adding new modules! Also bear in mind that the
-	// enumeration always has to start with [case 0:] and
-	// that [default:] must return NULL!...
-
-	switch( i )
-	{
-	case 0:		return( new Cdodstats );
-	case 1:		return( new Cdodstatsprob );
-	case 2:		return( new Cdodthresholdproperror );
-	case 3:		return( new Cdodthresholdprob );
-
-	default:	return( NULL );
-	}
-}
-
-
-///////////////////////////////////////////////////////////
-//														 //
-//														 //
-//														 //
-///////////////////////////////////////////////////////////
-
-//---------------------------------------------------------
-//{{AFX_SAGA
-
-	MLB_INTERFACE
-
-//}}AFX_SAGA
+#endif 
