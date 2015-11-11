@@ -13,7 +13,7 @@
 //                                                       //
 //-------------------------------------------------------//
 //                                                       //
-//                     dodstats.cpp                     //
+//                     dodstatsprob.cpp                     //
 //                                                       //
 //                 Copyright (C) 2007 by                 //
 //                        Author                         //
@@ -59,7 +59,7 @@
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-#include "dodstats.h"
+#include "dodstatsprob.h"
 
 
 
@@ -70,26 +70,31 @@
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-Cdodstats::Cdodstats(void)
+Cdodstatsprob::Cdodstatsprob(void)
 {
 	// Module info
-	Set_Name		(_TL("DoD Stats"));
+	Set_Name		(_TL("DoD Stats Prob"));
 	Set_Author		(SG_T("Sina Masoud-Ansari"));
-	Set_Description	(_TW("Display area and volume of erosion/deposition for a DoD raster."));
+	Set_Description	(_TW("Display DoD statistics for a probabilistic thresholded raster."));
 
 	// GCD setup
 	GCDBinDir = SG_File_Make_Path(CSG_String("bin"), CSG_String("GCD"));
 	GCDBinDir = SG_File_Get_Path_Absolute(GCDBinDir);
 	GCD = SG_File_Make_Path(GCDBinDir, CSG_String("gcd"), CSG_String("exe"));
-	GCD_CMD = CSG_String("dodstats");
+	GCD_CMD = CSG_String("dodstatsprob");
 
 	// Logging
 	LogOutput = SG_File_Make_Path(GCDBinDir, CSG_String("out"), CSG_String("txt"));
 	LogError = SG_File_Make_Path(GCDBinDir, CSG_String("error"), CSG_String("txt"));;
 
 	// Grids
-	Parameters.Add_Grid(NULL, "DOD_INPUT"	, _TL("DoD"), _TL("Input grid to be used as DoD"), PARAMETER_INPUT);
+	Parameters.Add_Grid(NULL, "DOD_INPUT"	, _TL("DoD"), _TL("Raster to be used as DoD"), PARAMETER_INPUT);
+	Parameters.Add_Grid(NULL, "DOD_THRESHOLD"	, _TL("Threshold"), _TL("Thresholded raster"), PARAMETER_INPUT);
+	Parameters.Add_Grid(NULL, "DOD_PROPERROR"	, _TL("Propagated Error"), _TL("Propagated error raster"), PARAMETER_INPUT);
+
 	DoD_InputPath = SG_File_Make_Path(GCDBinDir, CSG_String("dodinput"), CSG_String("tif"));
+	DoD_ThresholdPath = SG_File_Make_Path(GCDBinDir, CSG_String("dodthresh"), CSG_String("tif"));
+	DoD_PropErrorPath = SG_File_Make_Path(GCDBinDir, CSG_String("dodproperror"), CSG_String("tif"));
 
 	// Tables
 	Parameters.Add_Table(NULL, "STATS_OUTPUT", _TL("DoD Output Statistics"), _TL("DoD Statistics"), PARAMETER_OUTPUT); 
@@ -108,7 +113,7 @@ Cdodstats::Cdodstats(void)
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-bool Cdodstats::On_Execute(void)
+bool Cdodstatsprob::On_Execute(void)
 {
 
 	if (!GetParameterValues())
@@ -117,16 +122,19 @@ bool Cdodstats::On_Execute(void)
 	}
 
 	// convert grids to tiffs for command input
-	CSG_Strings InputGridPaths = CSG_Strings();
+	CSG_Grid* InputGrids [3] = {DoD_Input, DoD_Threshold, DoD_PropError};
 
-	CSG_Grid* InputGrids [1] = {DoD_Input};
+	CSG_Strings InputGridPaths = CSG_Strings();
 	InputGridPaths.Add(DoD_InputPath);
+	InputGridPaths.Add(DoD_ThresholdPath);
+	InputGridPaths.Add(DoD_PropErrorPath);
+
 	if (!SaveGridsAsTIFF(InputGrids, InputGridPaths))
 	{
 		return false;
 	}
 
-	CSG_String CMD = CSG_String::Format(SG_T("%s %s %s >%s 2>%s"), GCD.c_str(), GCD_CMD.c_str(), DoD_InputPath.c_str(), LogOutput.c_str(), LogError.c_str());
+	CSG_String CMD = CSG_String::Format(SG_T("%s %s %s %s %s >%s 2>%s"), GCD.c_str(), GCD_CMD.c_str(), DoD_InputPath.c_str(), DoD_ThresholdPath.c_str(), DoD_PropErrorPath.c_str(), LogOutput.c_str(), LogError.c_str());
 	Message_Add(CSG_String("Executing: ") + CMD);			
 	if (system(CMD.b_str()) != 0)
 	{
@@ -141,13 +149,14 @@ bool Cdodstats::On_Execute(void)
 	return true;
 }
 
-bool Cdodstats::CreateStatsTable()
+bool Cdodstatsprob::CreateStatsTable()
 {
 	// set up table
 	DoDStatsTable->Destroy();
 	DoDStatsTable->Set_Name("DoD Stats");
 
 	// set table fields
+	DoDStatsTable->Add_Field(SG_T("DoD Raster"), SG_DATATYPE_String);
 	DoDStatsTable->Add_Field(SG_T("Area Erosion"), SG_DATATYPE_Double);
 	DoDStatsTable->Add_Field(SG_T("Area Deposition"), SG_DATATYPE_Double);
 	DoDStatsTable->Add_Field(SG_T("Vol Erosion"), SG_DATATYPE_Double);
@@ -166,26 +175,76 @@ bool Cdodstats::CreateStatsTable()
 		else
 		{
 			CSG_String Line;
-			CSG_Table_Record* Record = DoDStatsTable->Add_Record();
+			CSG_Table_Record* Record;
 
 			// skip first two lines
 			File.Read_Line(Line); File.Read_Line(Line);
 
-			// Area Erosion
-			File.Read_Line(Line); Line = Line.AfterFirst(':'); Line.Trim();
-			Record->Set_Value(0, Line.asDouble());
+			// RAW
+			// -------------------------------------------------------
 
-			// Area Deposition
+			Record = DoDStatsTable->Add_Record();
+			Record->Set_Value(0, "Raw");
+
+			// Area Erosion
 			File.Read_Line(Line); Line = Line.AfterFirst(':'); Line.Trim();
 			Record->Set_Value(1, Line.asDouble());
 
-			// Vol Erosion
+			// Area Deposition
 			File.Read_Line(Line); Line = Line.AfterFirst(':'); Line.Trim();
 			Record->Set_Value(2, Line.asDouble());
 
-			// Vol Deposition
+			// Vol Erosion
 			File.Read_Line(Line); Line = Line.AfterFirst(':'); Line.Trim();
 			Record->Set_Value(3, Line.asDouble());
+
+			// Vol Deposition
+			File.Read_Line(Line); Line = Line.AfterFirst(':'); Line.Trim();
+			Record->Set_Value(4, Line.asDouble());
+
+			// skip next 3 lines
+			File.Read_Line(Line); File.Read_Line(Line);  File.Read_Line(Line);
+			// -------------------------------------------------------
+
+			// THRESHOLDED
+			// -------------------------------------------------------
+
+			Record = DoDStatsTable->Add_Record();
+			Record->Set_Value(0, "Thresholded");
+
+			// Area Erosion
+			File.Read_Line(Line); Line = Line.AfterFirst(':'); Line.Trim();
+			Record->Set_Value(1, Line.asDouble());
+
+			// Area Deposition
+			File.Read_Line(Line); Line = Line.AfterFirst(':'); Line.Trim();
+			Record->Set_Value(2, Line.asDouble());
+
+			// Vol Erosion
+			File.Read_Line(Line); Line = Line.AfterFirst(':'); Line.Trim();
+			Record->Set_Value(3, Line.asDouble());
+
+			// Vol Deposition
+			File.Read_Line(Line); Line = Line.AfterFirst(':'); Line.Trim();
+			Record->Set_Value(4, Line.asDouble());		
+
+			// skip 2 lines
+			File.Read_Line(Line); File.Read_Line(Line);  File.Read_Line(Line);
+			// -------------------------------------------------------
+
+			// ERROR
+			// -------------------------------------------------------
+			Record = DoDStatsTable->Add_Record();
+			Record->Set_Value(0, "Error");
+
+			// Vol Erosion
+			File.Read_Line(Line); Line = Line.AfterFirst(':'); Line.Trim();
+			Record->Set_Value(3, Line.asDouble());
+
+			// Vol Deposition
+			File.Read_Line(Line); Line = Line.AfterFirst(':'); Line.Trim();
+			Record->Set_Value(4, Line.asDouble());					
+			// -------------------------------------------------------
 
 		}
 		File.Close();
@@ -200,7 +259,7 @@ bool Cdodstats::CreateStatsTable()
 }
 
 
-bool Cdodstats::SaveGridsAsTIFF(CSG_Grid** grids, CSG_Strings paths)
+bool Cdodstatsprob::SaveGridsAsTIFF(CSG_Grid** grids, CSG_Strings paths)
 {
 	TSG_Data_Type Type;
 	CSG_String FilePath;
@@ -229,22 +288,24 @@ bool Cdodstats::SaveGridsAsTIFF(CSG_Grid** grids, CSG_Strings paths)
 	return true;
 }
 
-bool Cdodstats::GetParameterValues()
+bool Cdodstatsprob::GetParameterValues()
 {
 
 	DoD_Input = Parameters("DOD_INPUT")->asGrid();
+	DoD_Threshold = Parameters("DOD_THRESHOLD")->asGrid();
+	DoD_PropError = Parameters("DOD_PROPERROR")->asGrid();
 	DoDStatsTable = Parameters("STATS_OUTPUT")->asTable();
 
 	return true;
 }
 
-void Cdodstats::DisplayLogs()
+void Cdodstatsprob::DisplayLogs()
 {
 	DisplayFile(LogOutput);
 	DisplayFile(LogError);
 }
 
-void Cdodstats::DisplayFile(CSG_String path)
+void Cdodstatsprob::DisplayFile(CSG_String path)
 {
 
 	if (SG_File_Exists(path))
