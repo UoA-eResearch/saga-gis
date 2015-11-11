@@ -309,10 +309,12 @@
     <ClInclude Include="..\..\..\saga_core\saga_api\shapes.h" />
     <ClInclude Include="..\..\..\saga_core\saga_api\table.h" />
     <ClInclude Include="..\..\..\saga_core\saga_api\tin.h" />
+    <ClInclude Include="dodstatsprob.h" />
     <ClInclude Include="MLB_Interface.h" />
     <ClInclude Include="dodstats.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="dodstatsprob.cpp" />
     <ClCompile Include="MLB_Interface.cpp" />
     <ClCompile Include="dodstats.cpp" />
   </ItemGroup>
