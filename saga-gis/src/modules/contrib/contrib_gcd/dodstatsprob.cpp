@@ -73,7 +73,7 @@
 Cdodstatsprob::Cdodstatsprob(void)
 {
 	// Module info
-	Set_Name		(_TL("DoD Stats Prob"));
+	Set_Name		(_TL("Probabilistic Threshold Statistics"));
 	Set_Author		(SG_T("Sina Masoud-Ansari"));
 	Set_Description	(_TW("Display DoD statistics for a probabilistic thresholded raster."));
 
