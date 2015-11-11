@@ -9,7 +9,8 @@ public:
 	CClean(void);
 	virtual ~CClean(void);
 
-	//virtual bool			needs_GUI		(void)	{	return( true );	}
+	virtual CSG_String		Get_MenuPath	(void)	{	return( _TL("Clean") );	}
+	virtual bool			needs_GUI		(void)	{	return( true );	}
 
 protected:
 

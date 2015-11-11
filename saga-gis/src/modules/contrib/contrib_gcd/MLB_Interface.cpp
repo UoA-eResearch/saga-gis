@@ -9,7 +9,7 @@
 //      System for Automated Geoscientific Analyses      //
 //                                                       //
 //                    Module Library:                    //
-//                       contrib_rjm                        //
+//                       contrib_gcd                        //
 //                                                       //
 //-------------------------------------------------------//
 //                                                       //
@@ -72,7 +72,7 @@ CSG_String Get_Info(int i)
 	switch( i )
 	{
 	case MLB_INFO_Name:	default:
-		return( _TL("Remote Job Management") );
+		return( _TL("Geomorphic Change Detection") );
 
 	case MLB_INFO_Category:
 		return( _TL("University of Auckland") );
@@ -81,13 +81,13 @@ CSG_String Get_Info(int i)
 		return( SG_T("Sina Masoud-Ansari") );
 
 	case MLB_INFO_Description:
-		return( _TL("Remote job submission tools for the University of Auckland cluster") );
+		return( _TL("Interface to the GCD commandline tools: http://gcd6help.joewheaton.org/") );
 
 	case MLB_INFO_Version:
 		return( SG_T("1.0") );
 
 	case MLB_INFO_Menu_Path:
-		return( _TL("University of Auckland|Remote Job Management") );
+		return( _TL("University of Auckland|Geomorphic Change Detection") );
 	}
 }
 
@@ -95,10 +95,8 @@ CSG_String Get_Info(int i)
 //---------------------------------------------------------
 // 3. Include the headers of your modules here...
 
-#include "Submit.h"
-#include "Wait.h"
-#include "Clean.h"
-#include "Cancel.h"
+#include "dodstats.h"
+
 
 //---------------------------------------------------------
 // 4. Allow your modules to be created here...
@@ -112,10 +110,7 @@ CSG_Module *		Create_Module(int i)
 
 	switch( i )
 	{
-	case 0:		return( new CSubmit );
-	case 1:		return( new CWait );
-	case 2:		return( new CClean );
-	case 3:		return( new CCancel );
+	case 0:		return( new Cdodstats );
 
 	default:	return( NULL );
 	}

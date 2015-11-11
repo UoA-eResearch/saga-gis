@@ -13,5 +13,10 @@
 *.exp
 *.lib
 *.suo
+*.manifest
+*.rc
+*.res
+*.ilk
+*.idb
 saga-gis/bin
 saga-gis/src/ipch
