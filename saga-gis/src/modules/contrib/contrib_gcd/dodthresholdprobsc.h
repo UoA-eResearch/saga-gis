@@ -72,7 +72,7 @@ class Cdodthresholdprobsc : public CSG_Module_Grid
 public:
 	Cdodthresholdprobsc(void);
 
-	virtual CSG_String			Get_MenuPath	(void)	{	return( _TL("DoD Stats") );	}
+	virtual CSG_String			Get_MenuPath	(void)	{	return( _TL("Probabilistic Threshold with Spatial Coherence") );	}
 
 
 protected:

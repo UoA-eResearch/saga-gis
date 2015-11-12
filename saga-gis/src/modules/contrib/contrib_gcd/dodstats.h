@@ -87,7 +87,7 @@ class Cdodstats : public CSG_Module_Grid
 public:
 	Cdodstats(void);
 
-	virtual CSG_String			Get_MenuPath	(void)	{	return( _TL("DoD Stats") );	}
+	virtual CSG_String			Get_MenuPath	(void)	{	return( _TL("Statistics") );	}
 
 
 protected:

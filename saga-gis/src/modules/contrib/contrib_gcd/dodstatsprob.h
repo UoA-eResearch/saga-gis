@@ -72,7 +72,7 @@ class Cdodstatsprob : public CSG_Module_Grid
 public:
 	Cdodstatsprob(void);
 
-	virtual CSG_String			Get_MenuPath	(void)	{	return( _TL("DoD Stats") );	}
+	virtual CSG_String			Get_MenuPath	(void)	{	return( _TL("Probabilistic Threshold Statistics") );	}
 
 
 protected:

@@ -59,20 +59,20 @@
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-#ifndef HEADER_INCLUDED__dodthresholdproperror_H
-#define HEADER_INCLUDED__dodthresholdproperror_H
+#ifndef HEADER_INCLUDED__dodminlod_H
+#define HEADER_INCLUDED__dodminlod_H
 
 //---------------------------------------------------------
 #include "MLB_Interface.h"
 #include "gdal_driver.h"
 
 
-class Cdodthresholdproperror : public CSG_Module_Grid
+class Cdodminlod : public CSG_Module_Grid
 {
 public:
-	Cdodthresholdproperror(void);
+	Cdodminlod(void);
 
-	virtual CSG_String			Get_MenuPath	(void)	{	return( _TL("Propagated Error Threshold") );	}
+	virtual CSG_String			Get_MenuPath	(void)	{	return( _TL("DoD Minimum Level of Detection") );	}
 
 
 protected:
@@ -90,13 +90,18 @@ private:
 	CSG_String LogError;
 
 	// GRIDS
-	CSG_Grid* DoD_Input;
-	CSG_Grid* DoD_PropError;
-	CSG_Grid* DoD_Output;
+	CSG_Grid* NewDEM;
+	CSG_Grid* OldDEM;
+	CSG_Grid* RawDoD;
+	CSG_Grid* ThresholdedDoD;
 
-	CSG_String DoD_InputPath;
-	CSG_String DoD_PropErrorPath;
-	CSG_String DoD_OutputPath;
+	CSG_String NewDEM_InputPath;
+	CSG_String OldDEM_InputPath;
+	CSG_String RawDoD_OutputPath;
+	CSG_String ThresholdedDoD_OutputPath;
+
+	// Parameters
+	double MinLoD;
 
 	// GDAL
 	TSG_Data_Type Type;
@@ -108,9 +113,11 @@ private:
 	void DisplayFile(CSG_String path);
 	void ApplyColors(CSG_Grid* from, CSG_Grid* to);
 	bool GetParameterValues(void);
-	bool SaveGridsAsTIFF(CSG_Grid** grid, CSG_Strings paths);
-	bool LoadTIFFAsGrid(CSG_String tiffpath, CSG_Grid* grid);
+	bool SaveGridsAsTIFF(CSG_Grid** grids, CSG_Strings paths);
+	bool LoadTIFFAsGrid(CSG_String tiffpath, CSG_Grid* grid, CSG_String name);
+	bool LoadTIFFsAsGrids(CSG_Strings tiffpaths, CSG_Grid** grids, CSG_Strings names);
 	bool DeleteFile(CSG_String path);
+	bool DeleteFiles(CSG_Strings paths);
 
 };
 
