@@ -13,7 +13,7 @@
 //                                                       //
 //-------------------------------------------------------//
 //                                                       //
-//                     dodminlod.cpp                     //
+//                     dodproperror.cpp                     //
 //                                                       //
 //                 Copyright (C) 2007 by                 //
 //                        Author                         //
@@ -59,7 +59,7 @@
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-#include "dodminlod.h"
+#include "dodproperror.h"
 
 
 
@@ -70,18 +70,18 @@
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-Cdodminlod::Cdodminlod(void)
+Cdodproperror::Cdodproperror(void)
 {
 	// Module info
-	Set_Name		(_TL("Minimum Level of Detection DoD"));
+	Set_Name		(_TL("Propogated Error DoD"));
 	Set_Author		(SG_T("Sina Masoud-Ansari"));
-	Set_Description	(_TW("Calculate a DoD and threshold it using a minimum level of detection"));
+	Set_Description	(_TW("Calculate a raw DEM and threshold it usnig propagated error"));
 
 	// GCD setup
 	GCDBinDir = SG_File_Make_Path(CSG_String("bin"), CSG_String("GCD"));
 	GCDBinDir = SG_File_Get_Path_Absolute(GCDBinDir);
 	GCD = SG_File_Make_Path(GCDBinDir, CSG_String("gcd"), CSG_String("exe"));
-	GCD_CMD = CSG_String("dodminlod");
+	GCD_CMD = CSG_String("dodproperror");
 
 	// Logging
 	LogOutput = SG_File_Make_Path(GCDBinDir, CSG_String("out"), CSG_String("txt"));
@@ -90,12 +90,13 @@ Cdodminlod::Cdodminlod(void)
 	// Grids
 	Parameters.Add_Grid(NULL, "NEW_DEM"	, _TL("New DEM"), _TL("New DEM raster"), PARAMETER_INPUT);
 	Parameters.Add_Grid(NULL, "OLD_DEM"	, _TL("Old DEM"), _TL("Old DEM raster"), PARAMETER_INPUT);
+	Parameters.Add_Grid(NULL, "PROP_ERROR", _TL("Propagated Error"), _TL("Propagated Error"), PARAMETER_INPUT);
 	Parameters.Add_Grid(NULL, "RAW_DOD", _TL("Raw DoD"), _TL("Raw DEM of difference"), PARAMETER_OUTPUT);
 	Parameters.Add_Grid(NULL, "THRESHOLDED_DOD", _TL("Thresholded DoD"), _TL("Thresholded DEM of difference"), PARAMETER_OUTPUT);
-	Parameters.Add_Value(NULL, "MINLOD", _TL("Minimum Level of Detection"), _TL("Minimum level of detection for thresholding"), PARAMETER_TYPE_Double, 0, 0, true);
 
 	NewDEM_InputPath = SG_File_Make_Path(GCDBinDir, CSG_String("newdem"), CSG_String("tif"));
 	OldDEM_InputPath = SG_File_Make_Path(GCDBinDir, CSG_String("olddem"), CSG_String("tif"));
+	PropError_InputPath = SG_File_Make_Path(GCDBinDir, CSG_String("properror"), CSG_String("tif"));
 	RawDoD_OutputPath = SG_File_Make_Path(GCDBinDir, CSG_String("rawdodoutput"), CSG_String("tif"));
 	ThresholdedDoD_OutputPath = SG_File_Make_Path(GCDBinDir, CSG_String("threshdodoutput"), CSG_String("tif"));
 
@@ -113,7 +114,7 @@ Cdodminlod::Cdodminlod(void)
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-bool Cdodminlod::On_Execute(void)
+bool Cdodproperror::On_Execute(void)
 {
 
 	if (!GetParameterValues())
@@ -122,11 +123,12 @@ bool Cdodminlod::On_Execute(void)
 	}
 
 	// convert grids to tiffs for command input
-	CSG_Grid* InputGrids [2] = {NewDEM, OldDEM};
+	CSG_Grid* InputGrids [3] = {NewDEM, OldDEM, PropError};
 
 	CSG_Strings InputGridPaths = CSG_Strings();
 	InputGridPaths.Add(NewDEM_InputPath);
 	InputGridPaths.Add(OldDEM_InputPath);
+	InputGridPaths.Add(PropError_InputPath);
 
 	if (!SaveGridsAsTIFF(InputGrids, InputGridPaths))
 	{
@@ -147,7 +149,7 @@ bool Cdodminlod::On_Execute(void)
 		return false;
 	}
 
-	CSG_String CMD = CSG_String::Format(SG_T("%s %s %s %s %s %s %f >%s 2>%s"), GCD.c_str(), GCD_CMD.c_str(), NewDEM_InputPath.c_str(), OldDEM_InputPath.c_str(), RawDoD_OutputPath.c_str(), ThresholdedDoD_OutputPath.c_str(), MinLoD, LogOutput.c_str(), LogError.c_str());
+	CSG_String CMD = CSG_String::Format(SG_T("%s %s %s %s %s %s %s >%s 2>%s"), GCD.c_str(), GCD_CMD.c_str(), NewDEM_InputPath.c_str(), OldDEM_InputPath.c_str(), PropError_InputPath.c_str(), RawDoD_OutputPath.c_str(), ThresholdedDoD_OutputPath.c_str(), LogOutput.c_str(), LogError.c_str());
 	Message_Add(CSG_String("Executing: ") + CMD);			
 	if (system(CMD.b_str()) != 0)
 	{
@@ -171,7 +173,7 @@ bool Cdodminlod::On_Execute(void)
 	return true;
 }
 
-bool Cdodminlod::DeleteFiles(CSG_Strings paths)
+bool Cdodproperror::DeleteFiles(CSG_Strings paths)
 {
 	bool success = false;
 	for (int i = 0; i < paths.Get_Count(); i++)
@@ -185,7 +187,7 @@ bool Cdodminlod::DeleteFiles(CSG_Strings paths)
 	return success;
 }
 
-bool Cdodminlod::DeleteFile(CSG_String path)
+bool Cdodproperror::DeleteFile(CSG_String path)
 {
 	// Delete file if exists
 	if (SG_File_Exists(path))
@@ -199,7 +201,7 @@ bool Cdodminlod::DeleteFile(CSG_String path)
 	return true;
 }
 
-void Cdodminlod::ApplyColors(CSG_Grid* from, CSG_Grid* to)
+void Cdodproperror::ApplyColors(CSG_Grid* from, CSG_Grid* to)
 {
 		CSG_Colors colors;
 		DataObject_Get_Colors(from, colors);
@@ -207,7 +209,7 @@ void Cdodminlod::ApplyColors(CSG_Grid* from, CSG_Grid* to)
 		DataObject_Update(to, false);	
 }
 
-bool Cdodminlod::LoadTIFFsAsGrids(CSG_Strings tiffpaths, CSG_Grid** grids, CSG_Strings names)
+bool Cdodproperror::LoadTIFFsAsGrids(CSG_Strings tiffpaths, CSG_Grid** grids, CSG_Strings names)
 {
 	bool success = false;
 	for (int i = 0; i < tiffpaths.Get_Count(); i++)
@@ -221,7 +223,7 @@ bool Cdodminlod::LoadTIFFsAsGrids(CSG_Strings tiffpaths, CSG_Grid** grids, CSG_S
 	return success;
 }
 
-bool Cdodminlod::LoadTIFFAsGrid(CSG_String path, CSG_Grid* grid, CSG_String name)
+bool Cdodproperror::LoadTIFFAsGrid(CSG_String path, CSG_Grid* grid, CSG_String name)
 {
 
 	if( !GDALDataSet.Open_Read(path))
@@ -239,7 +241,7 @@ bool Cdodminlod::LoadTIFFAsGrid(CSG_String path, CSG_Grid* grid, CSG_String name
 	return true;
 }
 
-bool Cdodminlod::SaveGridsAsTIFF(CSG_Grid** grids, CSG_Strings paths)
+bool Cdodproperror::SaveGridsAsTIFF(CSG_Grid** grids, CSG_Strings paths)
 {
 	TSG_Data_Type Type;
 	CSG_String FilePath;
@@ -268,26 +270,26 @@ bool Cdodminlod::SaveGridsAsTIFF(CSG_Grid** grids, CSG_Strings paths)
 	return true;
 }
 
-bool Cdodminlod::GetParameterValues()
+bool Cdodproperror::GetParameterValues()
 {
 
 	NewDEM = Parameters("NEW_DEM")->asGrid();
 	OldDEM = Parameters("OLD_DEM")->asGrid();
 	RawDoD = Parameters("RAW_DOD")->asGrid();
+	PropError = Parameters("PROP_ERROR")->asGrid();
 	ThresholdedDoD = Parameters("THRESHOLDED_DOD")->asGrid();
-	MinLoD = Parameters("MINLOD")->asDouble();
 
 	return true;
 
 }
 
-void Cdodminlod::DisplayLogs()
+void Cdodproperror::DisplayLogs()
 {
 	DisplayFile(LogOutput);
 	DisplayFile(LogError);
 }
 
-void Cdodminlod::DisplayFile(CSG_String path)
+void Cdodproperror::DisplayFile(CSG_String path)
 {
 
 	if (SG_File_Exists(path))
