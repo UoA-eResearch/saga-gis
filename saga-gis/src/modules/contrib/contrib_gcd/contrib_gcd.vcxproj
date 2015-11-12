@@ -311,6 +311,7 @@
     <ClInclude Include="..\..\..\saga_core\saga_api\tin.h" />
     <ClInclude Include="dodstatsprob.h" />
     <ClInclude Include="dodthresholdprob.h" />
+    <ClInclude Include="dodthresholdprobsc.h" />
     <ClInclude Include="dodthresholdproperror.h" />
     <ClInclude Include="MLB_Interface.h" />
     <ClInclude Include="dodstats.h" />
@@ -318,6 +319,7 @@
   <ItemGroup>
     <ClCompile Include="dodstatsprob.cpp" />
     <ClCompile Include="dodthresholdprob.cpp" />
+    <ClCompile Include="dodthresholdprobsc.cpp" />
     <ClCompile Include="dodthresholdproperror.cpp" />
     <ClCompile Include="MLB_Interface.cpp" />
     <ClCompile Include="dodstats.cpp" />
