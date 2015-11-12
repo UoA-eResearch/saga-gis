@@ -310,6 +310,7 @@
     <ClInclude Include="..\..\..\saga_core\saga_api\table.h" />
     <ClInclude Include="..\..\..\saga_core\saga_api\tin.h" />
     <ClInclude Include="dodminlod.h" />
+    <ClInclude Include="dodproperror.h" />
     <ClInclude Include="dodstatsprob.h" />
     <ClInclude Include="dodthresholdprob.h" />
     <ClInclude Include="dodthresholdprobsc.h" />
@@ -319,6 +320,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dodminlod.cpp" />
+    <ClCompile Include="dodproperror.cpp" />
     <ClCompile Include="dodstatsprob.cpp" />
     <ClCompile Include="dodthresholdprob.cpp" />
     <ClCompile Include="dodthresholdprobsc.cpp" />

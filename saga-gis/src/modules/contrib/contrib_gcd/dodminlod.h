@@ -72,7 +72,7 @@ class Cdodminlod : public CSG_Module_Grid
 public:
 	Cdodminlod(void);
 
-	virtual CSG_String			Get_MenuPath	(void)	{	return( _TL("DoD Minimum Level of Detection") );	}
+	virtual CSG_String			Get_MenuPath	(void)	{	return( _TL("Minimum Level of Detection DoD") );	}
 
 
 protected:
