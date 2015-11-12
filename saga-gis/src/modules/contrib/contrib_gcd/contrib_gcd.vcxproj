@@ -317,6 +317,8 @@
     <ClInclude Include="dodthresholdproperror.h" />
     <ClInclude Include="MLB_Interface.h" />
     <ClInclude Include="dodstats.h" />
+    <ClInclude Include="properror.h" />
+    <ClInclude Include="uniformerror.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dodminlod.cpp" />
@@ -327,6 +329,8 @@
     <ClCompile Include="dodthresholdproperror.cpp" />
     <ClCompile Include="MLB_Interface.cpp" />
     <ClCompile Include="dodstats.cpp" />
+    <ClCompile Include="properror.cpp" />
+    <ClCompile Include="uniformerror.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\io\io_gdal\io_gdal.vcxproj">

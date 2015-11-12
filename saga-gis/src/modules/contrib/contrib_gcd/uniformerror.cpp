@@ -13,7 +13,7 @@
 //                                                       //
 //-------------------------------------------------------//
 //                                                       //
-//                     dodproperror.cpp                     //
+//                     uniformerror.cpp                     //
 //                                                       //
 //                 Copyright (C) 2007 by                 //
 //                        Author                         //
@@ -59,7 +59,7 @@
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-#include "dodproperror.h"
+#include "uniformerror.h"
 
 
 
@@ -70,35 +70,30 @@
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-Cdodproperror::Cdodproperror(void)
+Cuniformerror::Cuniformerror(void)
 {
 	// Module info
-	Set_Name		(_TL("Propogated Error DoD"));
+	Set_Name		(_TL("Uniform Error Calculation"));
 	Set_Author		(SG_T("Sina Masoud-Ansari"));
-	Set_Description	(_TW("Calculate a raw DEM and threshold it using propagated error"));
+	Set_Description	(_TW("Calculate a uniform error raster"));
 
 	// GCD setup
 	GCDBinDir = SG_File_Make_Path(CSG_String("bin"), CSG_String("GCD"));
 	GCDBinDir = SG_File_Get_Path_Absolute(GCDBinDir);
 	GCD = SG_File_Make_Path(GCDBinDir, CSG_String("gcd"), CSG_String("exe"));
-	GCD_CMD = CSG_String("dodproperror");
+	GCD_CMD = CSG_String("uniformerror");
 
 	// Logging
 	LogOutput = SG_File_Make_Path(GCDBinDir, CSG_String("out"), CSG_String("txt"));
 	LogError = SG_File_Make_Path(GCDBinDir, CSG_String("error"), CSG_String("txt"));;
 
 	// Grids
-	Parameters.Add_Grid(NULL, "NEW_DEM"	, _TL("New DEM"), _TL("New DEM raster"), PARAMETER_INPUT);
-	Parameters.Add_Grid(NULL, "OLD_DEM"	, _TL("Old DEM"), _TL("Old DEM raster"), PARAMETER_INPUT);
-	Parameters.Add_Grid(NULL, "PROP_ERROR", _TL("Propagated Error"), _TL("Propagated Error"), PARAMETER_INPUT);
-	Parameters.Add_Grid(NULL, "RAW_DOD", _TL("Raw DoD"), _TL("Raw DEM of difference"), PARAMETER_OUTPUT);
-	Parameters.Add_Grid(NULL, "THRESHOLDED_DOD", _TL("Thresholded DoD"), _TL("Thresholded DEM of difference"), PARAMETER_OUTPUT);
+	Parameters.Add_Grid(NULL, "REFERENCE"	, _TL("Reference"), _TL("Raster to be used as coordinate system and NoData reference."), PARAMETER_INPUT);
+	Parameters.Add_Grid(NULL, "UNIFORM_ERROR", _TL("Uniform Error"), _TL("Output uniform error raster"), PARAMETER_OUTPUT);
+	Parameters.Add_Value(NULL, "UNIFORM_ERROR_VALUE", _TL("Uniform Error Value"), _TL("Uniform error value for output raster"), PARAMETER_TYPE_Double, 0);
 
-	NewDEM_InputPath = SG_File_Make_Path(GCDBinDir, CSG_String("newdem"), CSG_String("tif"));
-	OldDEM_InputPath = SG_File_Make_Path(GCDBinDir, CSG_String("olddem"), CSG_String("tif"));
-	PropError_InputPath = SG_File_Make_Path(GCDBinDir, CSG_String("properror"), CSG_String("tif"));
-	RawDoD_OutputPath = SG_File_Make_Path(GCDBinDir, CSG_String("rawdodoutput"), CSG_String("tif"));
-	ThresholdedDoD_OutputPath = SG_File_Make_Path(GCDBinDir, CSG_String("threshdodoutput"), CSG_String("tif"));
+	Reference_InputPath = SG_File_Make_Path(GCDBinDir, CSG_String("reference"), CSG_String("tif"));
+	UniformError_OutputPath = SG_File_Make_Path(GCDBinDir, CSG_String("uniformerror"), CSG_String("tif"));
 
 	//GDAL
 	GDALDriver = CSG_String("GTiff");
@@ -114,7 +109,7 @@ Cdodproperror::Cdodproperror(void)
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-bool Cdodproperror::On_Execute(void)
+bool Cuniformerror::On_Execute(void)
 {
 
 	if (!GetParameterValues())
@@ -123,12 +118,10 @@ bool Cdodproperror::On_Execute(void)
 	}
 
 	// convert grids to tiffs for command input
-	CSG_Grid* InputGrids [3] = {NewDEM, OldDEM, PropError};
+	CSG_Grid* InputGrids [1] = {Reference};
 
 	CSG_Strings InputGridPaths = CSG_Strings();
-	InputGridPaths.Add(NewDEM_InputPath);
-	InputGridPaths.Add(OldDEM_InputPath);
-	InputGridPaths.Add(PropError_InputPath);
+	InputGridPaths.Add(Reference_InputPath);
 
 	if (!SaveGridsAsTIFF(InputGrids, InputGridPaths))
 	{
@@ -136,12 +129,10 @@ bool Cdodproperror::On_Execute(void)
 	}
 
 	CSG_Strings OutputGridPaths = CSG_Strings();
-	OutputGridPaths.Add(RawDoD_OutputPath);
-	OutputGridPaths.Add(ThresholdedDoD_OutputPath);
+	OutputGridPaths.Add(UniformError_OutputPath);
 
 	CSG_Strings OutputGridNames = CSG_Strings();
-	OutputGridNames.Add("Raw DoD");
-	OutputGridNames.Add("Thresholded DoD");
+	OutputGridNames.Add("Uniform Error");
 
 	// delete old output files (GCD throws an error if a file already exists)
 	if (!DeleteFiles(OutputGridPaths))
@@ -149,7 +140,7 @@ bool Cdodproperror::On_Execute(void)
 		return false;
 	}
 
-	CSG_String CMD = CSG_String::Format(SG_T("%s %s %s %s %s %s %s >%s 2>%s"), GCD.c_str(), GCD_CMD.c_str(), NewDEM_InputPath.c_str(), OldDEM_InputPath.c_str(), PropError_InputPath.c_str(), RawDoD_OutputPath.c_str(), ThresholdedDoD_OutputPath.c_str(), LogOutput.c_str(), LogError.c_str());
+	CSG_String CMD = CSG_String::Format(SG_T("%s %s %s %s %f >%s 2>%s"), GCD.c_str(), GCD_CMD.c_str(), Reference_InputPath.c_str(), UniformError_OutputPath.c_str(), UniformErrorValue, LogOutput.c_str(), LogError.c_str());
 	Message_Add(CSG_String("Executing: ") + CMD);			
 	if (system(CMD.b_str()) != 0)
 	{
@@ -158,22 +149,20 @@ bool Cdodproperror::On_Execute(void)
 		return false;
 	}	
 
-	CSG_Grid* OutputGrids [3] = {RawDoD, ThresholdedDoD};
+	CSG_Grid* OutputGrids [1] = {UniformError};
 	if (!LoadTIFFsAsGrids(OutputGridPaths, OutputGrids, OutputGridNames))
 	{
 		return false;
 	}
-	Parameters("RAW_DOD")->Set_Value(RawDoD);
-	Parameters("THRESHOLDED_DOD")->Set_Value(ThresholdedDoD);
+	Parameters("UNIFORM_ERROR")->Set_Value(UniformError);
 
-	ApplyColors(NewDEM, RawDoD);
-	ApplyColors(NewDEM, ThresholdedDoD);
+	ApplyColors(Reference, UniformError);
 
 	DisplayFile(LogOutput);
 	return true;
 }
 
-bool Cdodproperror::DeleteFiles(CSG_Strings paths)
+bool Cuniformerror::DeleteFiles(CSG_Strings paths)
 {
 	bool success = false;
 	for (int i = 0; i < paths.Get_Count(); i++)
@@ -187,7 +176,7 @@ bool Cdodproperror::DeleteFiles(CSG_Strings paths)
 	return success;
 }
 
-bool Cdodproperror::DeleteFile(CSG_String path)
+bool Cuniformerror::DeleteFile(CSG_String path)
 {
 	// Delete file if exists
 	if (SG_File_Exists(path))
@@ -201,7 +190,7 @@ bool Cdodproperror::DeleteFile(CSG_String path)
 	return true;
 }
 
-void Cdodproperror::ApplyColors(CSG_Grid* from, CSG_Grid* to)
+void Cuniformerror::ApplyColors(CSG_Grid* from, CSG_Grid* to)
 {
 		CSG_Colors colors;
 		DataObject_Get_Colors(from, colors);
@@ -209,7 +198,7 @@ void Cdodproperror::ApplyColors(CSG_Grid* from, CSG_Grid* to)
 		DataObject_Update(to, false);	
 }
 
-bool Cdodproperror::LoadTIFFsAsGrids(CSG_Strings tiffpaths, CSG_Grid** grids, CSG_Strings names)
+bool Cuniformerror::LoadTIFFsAsGrids(CSG_Strings tiffpaths, CSG_Grid** grids, CSG_Strings names)
 {
 	bool success = false;
 	for (int i = 0; i < tiffpaths.Get_Count(); i++)
@@ -223,7 +212,7 @@ bool Cdodproperror::LoadTIFFsAsGrids(CSG_Strings tiffpaths, CSG_Grid** grids, CS
 	return success;
 }
 
-bool Cdodproperror::LoadTIFFAsGrid(CSG_String path, CSG_Grid* grid, CSG_String name)
+bool Cuniformerror::LoadTIFFAsGrid(CSG_String path, CSG_Grid* grid, CSG_String name)
 {
 
 	if( !GDALDataSet.Open_Read(path))
@@ -241,7 +230,7 @@ bool Cdodproperror::LoadTIFFAsGrid(CSG_String path, CSG_Grid* grid, CSG_String n
 	return true;
 }
 
-bool Cdodproperror::SaveGridsAsTIFF(CSG_Grid** grids, CSG_Strings paths)
+bool Cuniformerror::SaveGridsAsTIFF(CSG_Grid** grids, CSG_Strings paths)
 {
 	TSG_Data_Type Type;
 	CSG_String FilePath;
@@ -270,26 +259,24 @@ bool Cdodproperror::SaveGridsAsTIFF(CSG_Grid** grids, CSG_Strings paths)
 	return true;
 }
 
-bool Cdodproperror::GetParameterValues()
+bool Cuniformerror::GetParameterValues()
 {
 
-	NewDEM = Parameters("NEW_DEM")->asGrid();
-	OldDEM = Parameters("OLD_DEM")->asGrid();
-	RawDoD = Parameters("RAW_DOD")->asGrid();
-	PropError = Parameters("PROP_ERROR")->asGrid();
-	ThresholdedDoD = Parameters("THRESHOLDED_DOD")->asGrid();
+	Reference = Parameters("REFERENCE")->asGrid();
+	UniformError = Parameters("UNIFORM_ERROR")->asGrid();
+	UniformErrorValue = Parameters("UNIFORM_ERROR_VALUE")->asDouble();
 
 	return true;
 
 }
 
-void Cdodproperror::DisplayLogs()
+void Cuniformerror::DisplayLogs()
 {
 	DisplayFile(LogOutput);
 	DisplayFile(LogError);
 }
 
-void Cdodproperror::DisplayFile(CSG_String path)
+void Cuniformerror::DisplayFile(CSG_String path)
 {
 
 	if (SG_File_Exists(path))
