@@ -100,6 +100,7 @@ CSG_String Get_Info(int i)
 #include "dodthresholdproperror.h"
 #include "dodthresholdprob.h"
 #include "dodthresholdprobsc.h"
+#include "dodminlod.h"
 
 
 //---------------------------------------------------------
@@ -119,6 +120,7 @@ CSG_Module *		Create_Module(int i)
 	case 2:		return( new Cdodthresholdproperror );
 	case 3:		return( new Cdodthresholdprob );
 	case 4:		return( new Cdodthresholdprobsc );
+	case 5:		return( new Cdodminlod );
 
 	default:	return( NULL );
 	}
