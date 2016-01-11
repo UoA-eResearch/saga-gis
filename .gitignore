@@ -19,4 +19,4 @@
 *.ilk
 *.idb
 saga-gis/bin
-saga-gis/src/ipch
+*.ipch
