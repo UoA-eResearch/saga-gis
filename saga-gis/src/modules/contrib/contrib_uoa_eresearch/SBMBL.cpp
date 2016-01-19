@@ -1858,43 +1858,7 @@ CSBMBL::CSBMBL(void)
 
 CSBMBL::~CSBMBL(void)
 {
-	// delete dynamic data structuers
-	/*
-	for (int i = 0; i < Xmax; i++)
-	{
-		for (int j = 0; j < Ymax; j++)
-		{
-			if (area[i][j].percentFull != NULL)
-			{
-				delete [] area[i][j].percentFull;
-			}
-			if (area[i][j].percentCoarse != NULL)
-			{
-				delete [] area[i][j].percentCoarse;
-			}
-		}
-		if (area[i] != NULL)
-		{
-			delete [] area[i];
-		}
-		
-	}
-	if (area != NULL)
-	{
-		delete [] area;
-	}
-	*/
 
-	/*
-	delete [] excessOutofIterFineX;
-	delete [] localFluxOutofIterFineX;
-	delete [] excessOutofIterCoarseX;
-	delete [] localFluxOutofIterCoarseX;
-	delete [] excessOutofIterFineY;
-	delete [] localFluxOutofIterFineY;
-	delete [] excessOutofIterCoarseY;
-	delete [] localFluxOutofIterCoarseY;
-	*/
 }
 
 bool CSBMBL::On_Execute(void)
@@ -1934,18 +1898,6 @@ bool CSBMBL::On_Execute(void)
 	filename = "none";   /* user inputted */
 	readfilename = "save.000";
 	offset = 0; /*evan added to make saved files have the appropriate number for storm scenarios*/
-
-	//area = NULL;
-	/*
-	excessOutofIterFineX = NULL;
-	localFluxOutofIterFineX = NULL;
-	excessOutofIterCoarseX = NULL;
-	localFluxOutofIterCoarseX = NULL;
-	excessOutofIterFineY = NULL;
-	localFluxOutofIterFineY = NULL;
-	excessOutofIterCoarseY = NULL;
-	localFluxOutofIterCoarseY = NULL;
-	*/
 
 	// DIMENSIONS
 	int ncolors = 256;
@@ -2023,14 +1975,12 @@ bool CSBMBL::On_Execute(void)
 	area = std::vector<std::vector<cellStruct>>(Xmax, std::vector<cellStruct>(Ymax) );
 	
 	
-	//area = new cellStruct*[Xmax];
 	for (int i = 0; i < Xmax; i++)
 	{
-		//area[i] = new cellStruct[Ymax];
 		for (int j = 0; j < Ymax; j++)
 		{
-			area[i][j].percentFull = std::vector<double>(Zmax); //new double[Zmax];
-			area[i][j].percentCoarse = std::vector<double>(Zmax); //new double[Zmax];
+			area[i][j].percentFull = std::vector<double>(Zmax); 
+			area[i][j].percentCoarse = std::vector<double>(Zmax); 
 		}
 	}
 	

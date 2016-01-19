@@ -109,8 +109,6 @@ typedef struct cellStruct
 	double volumeOut;
 	double fineVolumeAdded;
 	double coarseVolumeAdded;
-	//double percentFull[Zmax];
-	//double percentCoarse[Zmax];
 	std::vector<double> percentFull;
 	std::vector<double> percentCoarse;
 	double volumeDeposited;
@@ -195,7 +193,6 @@ private:
 	int maxRunTime;                     /* measured in units of FORCING_DURATIONs; */
 	/* presently, 1 FORCING_DURATION = 1 day. */    
 
-	//cellStruct** area;
 	std::vector<std::vector<cellStruct>> area;
 	/* this is the declaration of our main data structure.
 	 above components can be accessed by area.volumeIn, etc... i.e.
