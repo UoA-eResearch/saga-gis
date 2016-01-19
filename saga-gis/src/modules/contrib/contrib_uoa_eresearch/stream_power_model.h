@@ -64,38 +64,7 @@
 
 //---------------------------------------------------------
 #include "MLB_Interface.h"
-
-#define FREE_ARG char*
-#define NR_END 1
-
-#define sqrt2 1.414213562373f
-#define oneoversqrt2 0.707106781186f
-#define fillincrement 0.01f
-
-#define MBIG 1000000000
-#define MSEED 161803398
-#define MZ 0
-#define FAC (1.0/MBIG)
-
-#define SWAP(a,b) itemp=(a);(a)=(b);(b)=itemp;
-#define M 7
-#define NSTACK 100000
-
-
-///////////////////////////////////////////////////////////
-//														 //
-//														 //
-//														 //
-///////////////////////////////////////////////////////////
-
-//---------------------------------------------------------
-// Use the 'stream_power_model_EXPORT' macro as defined in
-// 'MLB_Interface.h' to export this class to allow other
-// programs/libraries to use its functions:
-//
-// class stream_power_model_EXPORT Cstream_power_model : public CSG_Module
-// ...
-//
+#include "streampower.h"
 
 class Cstream_power_model : public CSG_Module
 {
@@ -104,45 +73,14 @@ public:
 	virtual ~Cstream_power_model(void);
 	virtual CSG_String	Get_MenuPath	(void)	{	return( _TL("Stream Power Model") );	}
 
-
 protected:
 
+	CSG_Grid *input, *uinput, *output;
+	std::vector<std::vector<double>> GridToVector(CSG_Grid* grid);
+	void VectorToGrid(std::vector<std::vector<double>> arr, CSG_Grid* grid);
+
 	virtual bool	On_Execute	(void);
-
-
-private:
-	char * fname;
-	float **flow1,**flow2,**flow3,**flow4,**flow5,**flow6,**flow7,**flow8,**flow;
-	float **topo,**topoold,**topo2,**slope,deltax,*ax,*ay,*bx,*by,*cx,*cy,*ux,*uy;
-	float *rx,*ry,U,K,D,duration,timestep,*topovec,thresh,thresholdarea;
-	int *topovecind,lattice_size_x,lattice_size_y, *iup,*idown,*jup,*jdown;
-	void streampower();
-	void setupgridneighbors();
-	int *ivector(long nl, long nh);
-	float **matrix(long nrl, long nrh, long ncl, long nch);
-	int **imatrix(long nrl, long nrh, long ncl, long nch);
-	float *vector(long nl, long nh);
-	float gasdev(int *idum);
-	float ran3(int *idum);
-	void hillslopediffusioninit();
-	void tridag(float a[], float b[], float c[], float r[], float u[], unsigned long n);
-	void free_ivector(int *v, long nl, long nh);
-	void free_vector(float *v, long nl, long nh);
-	void avalanche(int i, int j);
-	void calculatealongchannelslope(int i, int j);
-	void mfdflowroute(int i, int j);
-	void fillinpitsandflats(int i, int j);
-	void indexx(int n, float *arr, int *indx);
-	void testWrite(void);
-	CSG_Grid *InputGrid, *OutputGrid;
 };
 
 
-///////////////////////////////////////////////////////////
-//														 //
-//														 //
-//														 //
-///////////////////////////////////////////////////////////
-
-//---------------------------------------------------------
 #endif // #ifndef HEADER_INCLUDED__stream_power_model_H

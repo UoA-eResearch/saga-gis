@@ -96,9 +96,7 @@ CSG_String Get_Info(int i)
 // 3. Include the headers of your modules here...
 
 #include "stream_power_model.h"
-#include "test_stream_power_model.h"
 #include "SBMBL.h"
-#include "Life_test.h"
 
 
 //---------------------------------------------------------
@@ -114,10 +112,7 @@ CSG_Module *		Create_Module(int i)
 	switch( i )
 	{
 	case 0:		return( new Cstream_power_model );
-	case 1:		return( new Ctest_stream_power_model );
-	case 2:		return( new CSBMBL );
-	case 3:		return( new CLife);
-
+	case 1:		return( new CSBMBL );
 	default:	return( NULL );
 	}
 }
