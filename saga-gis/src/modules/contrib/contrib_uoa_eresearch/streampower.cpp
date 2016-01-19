@@ -446,14 +446,6 @@ void StreamPower::Step()
 		}
 
 	}
-	//if (time > printinterval)
-	//{
-	//char fname[100];
-	//sprintf(fname, "C:/outputs/saga_erosion_%f.asc", time);
-	//PrintState(fname);
-	//printinterval += printstep;
-	//}
-	std::cout << "Time: " << time << std::endl;
 }
 
 void StreamPower::PrintState(char* fname)

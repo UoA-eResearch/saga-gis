@@ -143,14 +143,15 @@ bool Cstream_power_model::On_Execute(void)
 	VectorToGrid(sp.GetTopo(), output);
 	DataObject_Update(output, true);
 	
+	Process_Set_Text(CSG_String::Format(SG_T("%f kyrs"), sp.time));
 	while (sp.time < sp.duration && Process_Get_Okay(true))
 	{
-		Process_Set_Text(CSG_String::Format(SG_T("Time: %f"), sp.time));
 		sp.Step();
+		Process_Set_Text(CSG_String::Format(SG_T("%f kyrs"), sp.time));
+		Set_Progress( (sp.time / sp.duration) * 100 );
 		VectorToGrid(sp.GetTopo(), output);
 		DataObject_Update(output, true);
 
-		
 	}
 	
 	return( true );
