@@ -111,8 +111,8 @@ typedef struct cellStruct
 	double coarseVolumeAdded;
 	//double percentFull[Zmax];
 	//double percentCoarse[Zmax];
-	double* percentFull;
-	double* percentCoarse;
+	std::vector<double> percentFull;
+	std::vector<double> percentCoarse;
 	double volumeDeposited;
 	double consistencyBelow;      /* this will represent the consistency */
 	int activeZ;  /* active cell in the Z dimension, i.e. top of sed buildup*/
@@ -195,7 +195,8 @@ private:
 	int maxRunTime;                     /* measured in units of FORCING_DURATIONs; */
 	/* presently, 1 FORCING_DURATION = 1 day. */    
 
-	cellStruct** area;
+	//cellStruct** area;
+	std::vector<std::vector<cellStruct>> area;
 	/* this is the declaration of our main data structure.
 	 above components can be accessed by area.volumeIn, etc... i.e.
 	 name of struct period field;
@@ -231,11 +232,11 @@ private:
 	double excessOutofIterCoarseY[Xmax], localFluxOutofIterCoarseY[Xmax];
 	*/
 
-	double *excessOutofIterFineX;
-	double *localFluxOutofIterFineX;
-	double *excessOutofIterCoarseX, *localFluxOutofIterCoarseX;
-	double *excessOutofIterFineY, *localFluxOutofIterFineY;
-	double *excessOutofIterCoarseY, *localFluxOutofIterCoarseY;
+	std::vector<double> excessOutofIterFineX;
+	std::vector<double> localFluxOutofIterFineX;
+	std::vector<double> excessOutofIterCoarseX, localFluxOutofIterCoarseX;
+	std::vector<double> excessOutofIterFineY, localFluxOutofIterFineY;
+	std::vector<double> excessOutofIterCoarseY, localFluxOutofIterCoarseY;
 
 	double currentVelocityX, currentVelocityY;
 	double waveHeight;

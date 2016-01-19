@@ -4,6 +4,7 @@
 #include <cstdio>
 #include <cmath>		/* BTW, doubling Xmax and Ymax for periodic BC copy */
 #include <ctime>		/* is now very unnecessary. Remove later */
+#include <vector>
 
 /* integration weights (gaussian) */
 const double gaussw[5] = {0.295524224714753, 0.269266719309996, 0.219086362515982, 0.149451349150581, 0.066671344308688};  
@@ -1858,18 +1859,33 @@ CSBMBL::CSBMBL(void)
 CSBMBL::~CSBMBL(void)
 {
 	// delete dynamic data structuers
-
+	/*
 	for (int i = 0; i < Xmax; i++)
 	{
 		for (int j = 0; j < Ymax; j++)
 		{
-			delete [] area[i][j].percentFull;
-			delete [] area[i][j].percentCoarse;
+			if (area[i][j].percentFull != NULL)
+			{
+				delete [] area[i][j].percentFull;
+			}
+			if (area[i][j].percentCoarse != NULL)
+			{
+				delete [] area[i][j].percentCoarse;
+			}
 		}
-		delete [] area[i];
+		if (area[i] != NULL)
+		{
+			delete [] area[i];
+		}
+		
 	}
-	delete [] area;
+	if (area != NULL)
+	{
+		delete [] area;
+	}
+	*/
 
+	/*
 	delete [] excessOutofIterFineX;
 	delete [] localFluxOutofIterFineX;
 	delete [] excessOutofIterCoarseX;
@@ -1878,6 +1894,7 @@ CSBMBL::~CSBMBL(void)
 	delete [] localFluxOutofIterFineY;
 	delete [] excessOutofIterCoarseY;
 	delete [] localFluxOutofIterCoarseY;
+	*/
 }
 
 bool CSBMBL::On_Execute(void)
@@ -1918,7 +1935,8 @@ bool CSBMBL::On_Execute(void)
 	readfilename = "save.000";
 	offset = 0; /*evan added to make saved files have the appropriate number for storm scenarios*/
 
-	area = NULL;
+	//area = NULL;
+	/*
 	excessOutofIterFineX = NULL;
 	localFluxOutofIterFineX = NULL;
 	excessOutofIterCoarseX = NULL;
@@ -1927,7 +1945,7 @@ bool CSBMBL::On_Execute(void)
 	localFluxOutofIterFineY = NULL;
 	excessOutofIterCoarseY = NULL;
 	localFluxOutofIterCoarseY = NULL;
-
+	*/
 
 	// DIMENSIONS
 	int ncolors = 256;
@@ -2002,25 +2020,29 @@ bool CSBMBL::On_Execute(void)
 
 
 	// Init dynamic data structuers
-	area = new cellStruct*[Xmax];
+	area = std::vector<std::vector<cellStruct>>(Xmax, std::vector<cellStruct>(Ymax) );
+	
+	
+	//area = new cellStruct*[Xmax];
 	for (int i = 0; i < Xmax; i++)
 	{
-		area[i] = new cellStruct[Ymax];
+		//area[i] = new cellStruct[Ymax];
 		for (int j = 0; j < Ymax; j++)
 		{
-			area[i][j].percentFull = new double[Zmax];
-			area[i][j].percentCoarse = new double[Zmax];
+			area[i][j].percentFull = std::vector<double>(Zmax); //new double[Zmax];
+			area[i][j].percentCoarse = std::vector<double>(Zmax); //new double[Zmax];
 		}
 	}
+	
 
-	excessOutofIterFineX = new double[Ymax];
-	localFluxOutofIterFineX = new double[Ymax];
-	excessOutofIterCoarseX = new double[Ymax];
-	localFluxOutofIterCoarseX = new double[Ymax];
-	excessOutofIterFineY = new double[Xmax];
-	localFluxOutofIterFineY = new double[Xmax];
-	excessOutofIterCoarseY = new double[Xmax];
-	localFluxOutofIterCoarseY = new double[Xmax];
+	excessOutofIterFineX = std::vector<double>(Ymax);
+	localFluxOutofIterFineX =  std::vector<double>(Ymax);
+	excessOutofIterCoarseX =  std::vector<double>(Ymax);
+	localFluxOutofIterCoarseX =  std::vector<double>(Ymax);
+	excessOutofIterFineY =  std::vector<double>(Xmax);
+	localFluxOutofIterFineY = std::vector<double>(Xmax);
+	excessOutofIterCoarseY = std::vector<double>(Xmax);
+	localFluxOutofIterCoarseY = std::vector<double>(Xmax);
 
 	main();
 	return( true );

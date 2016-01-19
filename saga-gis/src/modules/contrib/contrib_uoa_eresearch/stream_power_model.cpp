@@ -139,21 +139,18 @@ bool Cstream_power_model::On_Execute(void)
 	StreamPower sp = StreamPower(p);
 	sp.Init(input->Get_NX(), input->Get_NY(), input->Get_XMin(), input->Get_YMin(), input->Get_Cellsize(), input->Get_NoData_Value());
 	sp.SetTopo(GridToVector(input));
-	sp.SetU(1.0f); // TODO
+	sp.SetU(GridToVector(uinput));
 	VectorToGrid(sp.GetTopo(), output);
 	DataObject_Update(output, true);
-	Message_Add(CSG_String::Format(SG_T("%f, %f, %f"), sp.topo[0][0], sp.topo[12][12], sp.topo[56][56]));
 	
-	while (sp.time < sp.duration)
+	while (sp.time < sp.duration && Process_Get_Okay(true))
 	{
 		Process_Set_Text(CSG_String::Format(SG_T("Time: %f"), sp.time));
-		if (Process_Get_Okay(true))
-		{
-			sp.Step();
-			VectorToGrid(sp.GetTopo(), output);
-			DataObject_Update(output, true);
+		sp.Step();
+		VectorToGrid(sp.GetTopo(), output);
+		DataObject_Update(output, true);
 
-		}
+		
 	}
 	
 	return( true );
