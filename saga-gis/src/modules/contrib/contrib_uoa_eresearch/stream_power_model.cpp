@@ -63,6 +63,8 @@
 #include <cstdio>
 #include <cstdlib>
 #include "stream_power_model.h"
+#include "gdal_driver.h"
+
 
 ///////////////////////////////////////////////////////////
 //														 //
@@ -86,9 +88,11 @@ Cstream_power_model::Cstream_power_model(void)
 	// General parameters
 	Parameters.Add_Grid(NULL, "INPUT"	, _TL("Input DEM"), _TL("Initial topography"), PARAMETER_INPUT);
 	Parameters.Add_Grid_Output(NULL, "OUTPUT", _TL("Output"), _TL("Simulation output"));
+	Parameters.Add_String(NULL, "OUTPUT_NAME", _TL("Output Name"), _TL("Output Name"), "StreamPowerModelOutput");
+	Parameters.Add_FilePath(NULL, "OUTPUT_DIR", _TL("Output Directory"), _TL("Directory used for saving regular GeoTIFF snaphots of the model as it progresses."), NULL, NULL, false, true, false); 
 
-	CSG_Parameter	*pNode;
 	//m_Grid_Target.Create(&Parameters);
+	CSG_Parameter	*pNode;
 
 	Parameters.Add_Choice(
 		NULL	, "METHOD"		, _TL("Parameter Type"),
@@ -107,8 +111,8 @@ Cstream_power_model::Cstream_power_model(void)
 		_TL("")
 	);
 	
-	Parameters.Add_Value(pNode, "U_SCALAR", _TL("Uplift"), _TL("Uplift field, rate per kyrs"), PARAMETER_TYPE_Double, 0.05, 0, true);
-	Parameters.Add_Value(pNode, "K_SCALAR", _TL("Diffusion"), _TL("Diffusion parameter kyr^-1"), PARAMETER_TYPE_Double, 0.05, 0, true);
+	Parameters.Add_Value(pNode, "U_SCALAR", _TL("Uplift"), _TL("Uplift field, rate per kyrs"), PARAMETER_TYPE_Double, 1, 0, true);
+	Parameters.Add_Value(pNode, "K_SCALAR", _TL("Diffusion"), _TL("Diffusion parameter kyr^-1"), PARAMETER_TYPE_Double, 30, 0, true);
 
 	// Grid parameters
 	pNode	= Parameters.Add_Node(
@@ -121,6 +125,8 @@ Cstream_power_model::Cstream_power_model(void)
 	
 	Parameters.Add_Value(NULL, "T", _TL("Timestep"), _TL("Timestep in kyrs"), PARAMETER_TYPE_Double, 1.0, 0, true);
 	Parameters.Add_Value(NULL, "DURATION", _TL("Duration"), _TL("Duration in kyrs"), PARAMETER_TYPE_Double, 1, 0, true);
+	
+
 }
 
 int Cstream_power_model::On_Parameter_Changed(CSG_Parameters *pParameters, CSG_Parameter *pParameter)
@@ -169,6 +175,7 @@ std::vector<std::vector<double>> Cstream_power_model::GridToVector(CSG_Grid* gri
 
 bool Cstream_power_model::On_Execute(void)
 {
+	CSG_String outputDir = Parameters("OUTPUT_DIR")->asFilePath()->asString();
 	input = Parameters("INPUT")->asGrid();
 	bool scalar = false;
 
@@ -191,7 +198,7 @@ bool Cstream_power_model::On_Execute(void)
 
 	
 	output = SG_Create_Grid(SG_DATATYPE_Float, input->Get_NX(), input->Get_NY(), input->Get_Cellsize(), input->Get_XMin(), input->Get_YMin());
-	output->Set_Name(_TL("Output"));
+	output->Set_Name(Parameters("OUTPUT_NAME")->asString());
 	Parameters("OUTPUT")->Set_Value(output);
 	output->Assign(0.0);
 	DataObject_Update(output, true);
@@ -219,19 +226,57 @@ bool Cstream_power_model::On_Execute(void)
 	VectorToGrid(sp.GetTopo(), output);
 	DataObject_Update(output, true);
 	
-	Process_Set_Text(CSG_String::Format(SG_T("%f kyrs"), sp.time));
+	unsigned long lyrs = 0;
+	CSG_String ofname = CSG_String::Format(SG_T("%s_%lu_yrs"), output->Get_File_Type(), lyrs);
+	CSG_String outputPath = SG_File_Make_Path(outputDir, ofname, CSG_String("tif")); 
+	Message_Add(outputPath);
+
+	Process_Set_Text(CSG_String::Format(SG_T("%lu yrs"), lyrs));
 	while (Process_Get_Okay(true) && sp.time < sp.duration)
 	{
 		sp.Step();
-		Process_Set_Text(CSG_String::Format(SG_T("%f kyrs"), sp.time));
+		lyrs = (unsigned long)(sp.time * 1000);
+		Process_Set_Text(CSG_String::Format(SG_T("%lu yrs"), lyrs));
 		Set_Progress( (sp.time / sp.duration) * 100 );
 		VectorToGrid(sp.GetTopo(), output);
 		DataObject_Update(output, true);
 
+		// save state
+		ofname = CSG_String::Format(SG_T("%s_%lu_yrs"), output->Get_Name(), lyrs);
+		outputPath = SG_File_Make_Path(outputDir, ofname, CSG_String("tif")); 
+		Message_Add(outputPath);
+		//ExportGrid(output, outputPath);
 	}
 	
 	
 	return( true );
+}
+
+bool Cstream_power_model::ExportGrid(CSG_Grid* grid, CSG_String path)
+{
+	/*
+	// GDAL related options
+	TSG_Data_Type type = grid->Get_Type();
+	CSG_String driver = CSG_String("GTiff");
+	CSG_String options = "";
+	CSG_Projection prj; 	Get_Projection(prj);
+	CSG_GDAL_DataSet dataset;
+	
+
+	if( !dataset.Open_Write(path, driver, options, type, 1, *Get_System(), prj) )
+	{
+		Error_Set(CSG_String::Format(SG_T("%s: '%s' "), _TL("Failed to open file for writing: "), path.c_str()));
+		return false;
+	}
+	dataset.Write(0, grid);
+	
+	if( !dataset.Close() )
+	{
+		Error_Set(CSG_String::Format(SG_T("%s: '%s' "), _TL("Failed to close file after writing: "), path.c_str()));
+		return false;
+	}
+	*/
+	return true;
 }
 
 Cstream_power_model::~Cstream_power_model(void)
