@@ -11,7 +11,7 @@
 
 void StreamPower::Tridag(std::vector<double>& a, std::vector<double>& b, std::vector<double>& c, std::vector<double>& r, std::vector<double>& u, int n)
 {
-	unsigned long j;
+	int j;
 	double bet;
 	std::vector<double> gam(n);
 
@@ -305,9 +305,9 @@ void StreamPower::Avalanche(int i, int j)
 
 void StreamPower::Start()
 {
-	char fname[100];
-	sprintf(fname, "C:/outputs/saga_erosion_initial.asc");
-	PrintState(fname);
+	//char fname[100];
+	//sprintf(fname, "C:/outputs/saga_erosion_initial.asc");
+	//PrintState(fname);
 
 	time = 0;
 	while (time < duration)
@@ -351,11 +351,6 @@ void StreamPower::Step()
 
 	Flood();
 
-	double e1, e2, e3;
-	e1  = elevation(0,0);
-	e2  = elevation(10,10);
-	e3  = elevation(50,50);
-
 	for (j = 0; j < lattice_size_y; j++)
 	{
 		for (i = 0; i < lattice_size_x; i++)
@@ -397,7 +392,7 @@ void StreamPower::Step()
 
 			//double sflw = sqrt(flow[i][j]);
 			//double slij = slope[i][j];
-			deltah = timestep * K * sqrt(flow[i][j]) * deltax * slope[i][j];
+			deltah = timestep * K[i][j] * sqrt(flow[i][j]) * deltax * slope[i][j];
 
 
 			topo[i][j] -= deltah;
@@ -406,9 +401,9 @@ void StreamPower::Step()
 			{
 				topo[i][j] = 0;
 			}
-			if (K * sqrt(flow[i][j]) * deltax > max)
+			if (K[i][j] * sqrt(flow[i][j]) * deltax > max)
 			{
-				max = K * sqrt(flow[i][j]) * deltax;
+				max = K[i][j] * sqrt(flow[i][j]) * deltax;
 			}
 		}
 	}
@@ -494,6 +489,18 @@ void StreamPower::SetU(std::vector<std::vector<double>> u)
 
 }
 
+void StreamPower::SetK(std::vector<std::vector<double>> k)
+{
+	for (int i = 0; i < lattice_size_x; i++)
+	{
+		for (int j = 0; j < lattice_size_y; j++)
+		{
+			K[i][j] = k[i][j];
+		}
+	}
+
+}
+
 void StreamPower::SetU(double u)
 {
 	for (int i = 0; i < lattice_size_x; i++)
@@ -501,6 +508,18 @@ void StreamPower::SetU(double u)
 		for (int j = 0; j < lattice_size_y; j++)
 		{
 			U[i][j] = u;
+		}
+	}
+
+}
+
+void StreamPower::SetK(double k)
+{
+	for (int i = 0; i < lattice_size_x; i++)
+	{
+		for (int j = 0; j < lattice_size_y; j++)
+		{
+			K[i][j] = k;
 		}
 	}
 
@@ -522,6 +541,7 @@ void StreamPower::AssignVariables()
 	flow7 = std::vector<std::vector<double>>(lattice_size_x, std::vector<double>(lattice_size_y));
 	flow8 = std::vector<std::vector<double>>(lattice_size_x, std::vector<double>(lattice_size_y));
 	U = std::vector<std::vector<double>>(lattice_size_x, std::vector<double>(lattice_size_y));
+	K = std::vector<std::vector<double>>(lattice_size_x, std::vector<double>(lattice_size_y));
 	topovec = std::vector<double>(lattice_size_x * lattice_size_y);
 	topovecind = std::vector<int>(lattice_size_x * lattice_size_y);
 	elevation = Array2D<double>(lattice_size_x, lattice_size_y, nodata);
@@ -665,7 +685,6 @@ StreamPower::StreamPower(StreamErosionModelParameters p)
 	// user params
 	timestep = p.timestep;
 	duration = p.duration;
-	K = p.K;
 
 }
 

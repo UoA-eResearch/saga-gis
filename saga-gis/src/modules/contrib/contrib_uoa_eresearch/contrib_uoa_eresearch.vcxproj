@@ -172,6 +172,7 @@
       <OpenMPSupport>true</OpenMPSupport>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <TreatWarningAsError>false</TreatWarningAsError>
+      <SmallerTypeCheck>true</SmallerTypeCheck>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -190,6 +191,10 @@
       </DataExecutionPrevention>
       <ImportLibrary>$(OutDir)$(ProjectName).lib</ImportLibrary>
       <TargetMachine>MachineX64</TargetMachine>
+      <OptimizeReferences>
+      </OptimizeReferences>
+      <EnableCOMDATFolding>
+      </EnableCOMDATFolding>
     </Link>
     <Bscmake>
       <SuppressStartupBanner>true</SuppressStartupBanner>
@@ -273,6 +278,7 @@
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <OpenMPSupport>true</OpenMPSupport>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -290,6 +296,12 @@
       </DataExecutionPrevention>
       <ImportLibrary>$(OutDir)$(ProjectName).lib</ImportLibrary>
       <TargetMachine>MachineX64</TargetMachine>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <OptimizeReferences>
+      </OptimizeReferences>
+      <EnableCOMDATFolding>
+      </EnableCOMDATFolding>
+      <AssemblyDebug>true</AssemblyDebug>
     </Link>
     <Bscmake>
       <SuppressStartupBanner>true</SuppressStartupBanner>
@@ -320,7 +332,6 @@
     <ClInclude Include="Life_test.h" />
     <ClInclude Include="MLB_Interface.h" />
     <ClInclude Include="priority_flood.hpp" />
-    <ClInclude Include="SBMBL.h" />
     <ClInclude Include="streampower.h" />
     <ClInclude Include="stream_power_model.h" />
     <ClInclude Include="utility.h" />
@@ -329,7 +340,6 @@
     <ClCompile Include="Dunes.cpp" />
     <ClCompile Include="Life_test.cpp" />
     <ClCompile Include="MLB_Interface.cpp" />
-    <ClCompile Include="SBMBL.cpp" />
     <ClCompile Include="streampower.cpp" />
     <ClCompile Include="stream_power_model.cpp" />
     <ClCompile Include="utility.cpp" />

@@ -12,8 +12,8 @@
 
 struct StreamErosionModelParameters
 {
-	int timestep;
-	int duration;
+	double timestep;
+	double duration;
 	double K;		// Diffusion kyr^-1
 };
 
@@ -22,14 +22,14 @@ class StreamPower
 public:
 
 	// parameters
-	int lattice_size_x, lattice_size_y, duration, printinterval, printstep;
-	double K, D, timestep, deltax, thresh, thresholdarea, time;
+	int lattice_size_x, lattice_size_y, printinterval, printstep;
+	double D, timestep, deltax, thresh, thresholdarea, time, duration;
 	double xllcorner, yllcorner, nodata;
 
 	// internal variables
 	std::vector<int> iup, idown, jup, jdown, topovecind;
 	std::vector<double> ax, ay, bx, by, cx, cy, ux, uy, rx, ry, topovec;
-	std::vector<std::vector<double>> topo, topoold, topo2, slope, flow, flow1, flow2, flow3, flow4, flow5, flow6, flow7, flow8, U;
+	std::vector<std::vector<double>> topo, topoold, topo2, slope, flow, flow1, flow2, flow3, flow4, flow5, flow6, flow7, flow8, U, K;
 	Array2D<double> elevation;
 
 	static double Ran3(std::default_random_engine& generator, std::uniform_real_distribution<double>& distribution);
@@ -48,7 +48,9 @@ public:
 	void SetInitialValues(std::vector<std::vector<double>> t);
 	void SetTopo(std::vector<std::vector<double>> t); 
 	void SetU(std::vector<std::vector<double>> u);
+	void SetK(std::vector<std::vector<double>> k);
 	void SetU(double u);
+	void SetK(double k);
 	void SetupGridNeighbors();
 	void HillSlopeDiffusion();
 	void InitDiffusion();

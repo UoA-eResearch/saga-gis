@@ -185,12 +185,12 @@ class Array2D {
   //generally easier to work with. If your DEM has a dimension which exceeds
   //2147483647, some other modifications to this program will probably be
   //necessary.
-  int  totalWidth () const { return total_width;    }
-  int  totalHeight() const { return total_height;   }
-  int  viewWidth  () const { return data[0].size(); }
-  int  viewHeight () const { return data.size();    }
-  int  viewXoff   () const { return view_xoff;      }
-  int  viewYoff   () const { return view_yoff;      }
+  int  totalWidth () const { return (int)total_width;    }
+  int  totalHeight() const { return (int)total_height;   }
+  int  viewWidth  () const { return (int)data[0].size(); }
+  int  viewHeight () const { return (int)data.size();    }
+  int  viewXoff   () const { return (int)view_xoff;      }
+  int  viewYoff   () const { return (int)view_yoff;      }
   bool empty      () const { return data.empty();   }
   T    noData     () const { return no_data;        }
 

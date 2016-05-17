@@ -40,6 +40,14 @@
 
 CGridNet::CGridNet(void)
 {
+	#ifdef _WIN32
+		CSG_String UserHomeDir = CSG_String(getenv("USERPROFILE"));
+	#else
+		CSG_String UserHomeDir = CSG_String(getenv("HOME"));
+	#endif
+
+	CSG_String DefaultTempDir = SG_File_Make_Path(UserHomeDir, CSG_String("Saga_GIS_tmp"));
+
 	// INFO
 	Set_Name(_TL("Grid Network"));
 	Set_Author(SG_T("S. Masoud-Ansari, J. Tunnicliffe, D. Tarboton"));
@@ -59,6 +67,9 @@ CGridNet::CGridNet(void)
 	Parameters.Add_Value(NULL, "NPROC"	, _TL("Number of Processes"), _TL("The number of stripes that the domain will be divided into and the number of MPI parallel processes that will be spawned to evaluate each of the stripes"), PARAMETER_TYPE_Int, SG_Get_Max_Num_Procs_Omp(), 1, true, SG_Get_Max_Num_Procs_Omp(), true);
 	Parameters.Add_Value(NULL, "THRESHOLD"	, _TL("Mask Threshold"), _TL("This input parameter is used in the calculation mask grid value >= mask threshold to determine if the grid cell is in the domain to be analyzed."), PARAMETER_TYPE_Int, 0);
 
+	// Other
+	Parameters.Add_FilePath(NULL, "TEMP_DIR", _TL("Temp File Directory"), _TL("Directory used for storing temporary files during processing."), NULL, DefaultTempDir, false, true, false); 
+	
 
 }
 
@@ -94,7 +105,8 @@ bool CGridNet::On_Execute(void)
 	Get_Projection(Projection);
 	Type = FLOWD8_INPUT_Grid->Get_Type();
 
-	TempDirPath = SG_File_Get_Path_Absolute(CSG_String("taudem_tmp"));
+	//TempDirPath = SG_File_Get_Path_Absolute(CSG_String("taudem_tmp"));
+	TempDirPath = Parameters("TEMP_DIR")->asFilePath()->asString();
 
 	FLOWD8_INPUT_FileName = InputBasename + CSG_String("p");
 	FLOWD8_INPUT_FilePath = SG_File_Make_Path(TempDirPath, FLOWD8_INPUT_FileName, CSG_String("tif")); 

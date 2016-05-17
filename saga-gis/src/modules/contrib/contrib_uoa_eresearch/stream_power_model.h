@@ -75,10 +75,14 @@ public:
 
 protected:
 
-	CSG_Grid *input, *uinput, *output;
+	CSG_Parameters_Grid_Target m_Grid_Target;
+	CSG_Grid *input, *u_grid_input, *k_grid_input, *output;
+	double u_scalar_input, k_scalar_input;
 	std::vector<std::vector<double>> GridToVector(CSG_Grid* grid);
 	void VectorToGrid(std::vector<std::vector<double>> arr, CSG_Grid* grid);
 
+	virtual int						On_Parameter_Changed	(CSG_Parameters *pParameters, CSG_Parameter *pParameter);
+	virtual int						On_Parameters_Enable	(CSG_Parameters *pParameters, CSG_Parameter *pParameter);
 	virtual bool	On_Execute	(void);
 };
 

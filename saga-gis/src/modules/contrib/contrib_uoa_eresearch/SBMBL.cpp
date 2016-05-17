@@ -558,7 +558,7 @@ void CSBMBL::SedTransFine()
 	int x;
 	int y;
 	int z;
-	int jint;
+	//int jint;
 	double uMagnitude,vMagnitude;
 	double D;
 	double bedslopeX = -99.99;
@@ -1783,12 +1783,12 @@ void CSBMBL::UpdateGrid()
 
 CSBMBL::CSBMBL(void)
 {
-	Set_Name		(_TL("SBMBL"));
+	Set_Name		(_TL("Sorted Bedform Model"));
 
-	Set_Author		(SG_T("Giovanni Coco"));
+	Set_Author		(SG_T("G.Coco, S.Masoud-Ansari"));
 
 	Set_Description	(_TW(
-		"Dune sim code"
+		"Sorted Bedform Model"
 		));
 
 	CSG_Parameter	*pNode;

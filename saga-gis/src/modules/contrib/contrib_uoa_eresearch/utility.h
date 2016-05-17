@@ -1,4 +1,4 @@
-/**
+﻿/**
   @file
   Defines timing functions, progress bars, and the D8 neighbourhood.
 

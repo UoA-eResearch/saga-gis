@@ -81,14 +81,62 @@ Cstream_power_model::Cstream_power_model(void)
 		"Modified C code from Pelletier 2008: Quantitative Modelling of Earth Surface Processes.\n"
 		"Converted to C++ for use with SAGA GIS."
 		));
-
-	Parameters.Add_Grid(NULL, "INPUT"	, _TL("Input DEM"), _TL("Initial topography"), PARAMETER_INPUT);
-	Parameters.Add_Grid(NULL, "U"	, _TL("U"), _TL("Uplift topography"), PARAMETER_INPUT);
-	Parameters.Add_Grid_Output(NULL, "OUTPUT", _TL("Output"), _TL("Simulation output"));
 	
-	Parameters.Add_Value(NULL, "K", _TL("Diffusion"), _TL("Diffusion parameter kyr^-1"), PARAMETER_TYPE_Double, 0.05, 0, true);
+
+	// General parameters
+	Parameters.Add_Grid(NULL, "INPUT"	, _TL("Input DEM"), _TL("Initial topography"), PARAMETER_INPUT);
+	Parameters.Add_Grid_Output(NULL, "OUTPUT", _TL("Output"), _TL("Simulation output"));
+
+	CSG_Parameter	*pNode;
+	//m_Grid_Target.Create(&Parameters);
+
+	Parameters.Add_Choice(
+		NULL	, "METHOD"		, _TL("Parameter Type"),
+		_TL(""),
+		CSG_String::Format(SG_T("%s|%s|"),
+			_TL("Scalar"),
+			_TL("Grid")
+		), 1
+	);
+
+
+
+	// Scalar parameters
+	pNode	= Parameters.Add_Node(
+		NULL	, "NODE_SCALAR", _TL("Scalar"),
+		_TL("")
+	);
+	
+	Parameters.Add_Value(pNode, "U_SCALAR", _TL("Uplift"), _TL("Uplift field, rate per kyrs"), PARAMETER_TYPE_Double, 0.05, 0, true);
+	Parameters.Add_Value(pNode, "K_SCALAR", _TL("Diffusion"), _TL("Diffusion parameter kyr^-1"), PARAMETER_TYPE_Double, 0.05, 0, true);
+
+	// Grid parameters
+	pNode	= Parameters.Add_Node(
+		NULL	, "NODE_GRID", _TL("Grid"),
+		_TL("")
+	);
+
+	Parameters.Add_Grid(pNode, "U_GRID"	, _TL("Uplift"), _TL("Uplift field, rate per kyrs"), PARAMETER_OPTIONAL);
+	Parameters.Add_Grid(pNode, "K_GRID"	, _TL("Diffusion"), _TL("Diffusion field, rate per kyrs"), PARAMETER_OPTIONAL);
+	
 	Parameters.Add_Value(NULL, "T", _TL("Timestep"), _TL("Timestep in kyrs"), PARAMETER_TYPE_Double, 1.0, 0, true);
 	Parameters.Add_Value(NULL, "DURATION", _TL("Duration"), _TL("Duration in kyrs"), PARAMETER_TYPE_Double, 1, 0, true);
+}
+
+int Cstream_power_model::On_Parameter_Changed(CSG_Parameters *pParameters, CSG_Parameter *pParameter)
+{
+	return( m_Grid_Target.On_Parameter_Changed(pParameters, pParameter) ? 1 : 0 );
+}
+
+int Cstream_power_model::On_Parameters_Enable(CSG_Parameters *pParameters, CSG_Parameter *pParameter)
+{
+	if( !SG_STR_CMP(pParameter->Get_Identifier(), SG_T("METHOD")) )
+	{
+		pParameters->Get_Parameter("NODE_SCALAR")->Set_Enabled(pParameter->asInt() == 0);
+		pParameters->Get_Parameter("NODE_GRID"  )->Set_Enabled(pParameter->asInt() == 1);
+	}
+
+	return( m_Grid_Target.On_Parameters_Enable(pParameters, pParameter) ? 1 : 0 );
 }
 
 void Cstream_power_model::VectorToGrid(std::vector<std::vector<double>> arr, CSG_Grid* grid)
@@ -102,7 +150,6 @@ void Cstream_power_model::VectorToGrid(std::vector<std::vector<double>> arr, CSG
 	}
 	
 }
-
 
 std::vector<std::vector<double>> Cstream_power_model::GridToVector(CSG_Grid* grid)
 {
@@ -123,8 +170,26 @@ std::vector<std::vector<double>> Cstream_power_model::GridToVector(CSG_Grid* gri
 bool Cstream_power_model::On_Execute(void)
 {
 	input = Parameters("INPUT")->asGrid();
-	uinput = Parameters("U")->asGrid();
+	bool scalar = false;
 
+	//Message_Add(Parameters("METHOD")->asChoice()->asString());
+	//Message_Add(CSG_String::Format(SG_T("%d method"),Parameters("METHOD")->asChoice()->asInt()));
+	
+	// switch based on Grid or Scalar input selection
+	if (Parameters("METHOD")->asChoice()->asInt() == 0)
+	{
+		scalar = true;
+		u_scalar_input = Parameters("U_SCALAR")->asDouble();
+		k_scalar_input = Parameters("K_SCALAR")->asDouble();		
+	}
+	else
+	{
+		u_grid_input = Parameters("U_GRID")->asGrid();
+		k_grid_input = Parameters("K_GRID")->asGrid();
+
+	}
+
+	
 	output = SG_Create_Grid(SG_DATATYPE_Float, input->Get_NX(), input->Get_NY(), input->Get_Cellsize(), input->Get_XMin(), input->Get_YMin());
 	output->Set_Name(_TL("Output"));
 	Parameters("OUTPUT")->Set_Value(output);
@@ -132,19 +197,30 @@ bool Cstream_power_model::On_Execute(void)
 	DataObject_Update(output, true);
 
 	StreamErosionModelParameters p;
-	p.K = Parameters("K")->asDouble();
-	p.timestep = Parameters("DURATION")->asDouble();
+	p.timestep = Parameters("T")->asDouble();
 	p.duration = Parameters("DURATION")->asDouble();
 
 	StreamPower sp = StreamPower(p);
 	sp.Init(input->Get_NX(), input->Get_NY(), input->Get_XMin(), input->Get_YMin(), input->Get_Cellsize(), input->Get_NoData_Value());
 	sp.SetTopo(GridToVector(input));
-	sp.SetU(GridToVector(uinput));
+
+	if (scalar)
+	{
+		sp.SetU(u_scalar_input);
+		sp.SetK(k_scalar_input);
+	}
+	else 
+	{
+		sp.SetU(GridToVector(u_grid_input));
+		sp.SetK(GridToVector(k_grid_input));
+	}
+
+
 	VectorToGrid(sp.GetTopo(), output);
 	DataObject_Update(output, true);
 	
 	Process_Set_Text(CSG_String::Format(SG_T("%f kyrs"), sp.time));
-	while (sp.time < sp.duration && Process_Get_Okay(true))
+	while (Process_Get_Okay(true) && sp.time < sp.duration)
 	{
 		sp.Step();
 		Process_Set_Text(CSG_String::Format(SG_T("%f kyrs"), sp.time));
@@ -153,6 +229,7 @@ bool Cstream_power_model::On_Execute(void)
 		DataObject_Update(output, true);
 
 	}
+	
 	
 	return( true );
 }
