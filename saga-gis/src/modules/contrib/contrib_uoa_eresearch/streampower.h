@@ -15,6 +15,7 @@ struct StreamErosionModelParameters
 	double timestep;
 	double duration;
 	double K;		// Diffusion kyr^-1
+	bool scale_timestep;
 };
 
 class StreamPower
@@ -25,6 +26,7 @@ public:
 	int lattice_size_x, lattice_size_y, printinterval, printstep;
 	double D, timestep, deltax, thresh, thresholdarea, time, duration;
 	double xllcorner, yllcorner, nodata;
+	bool scale_timestep;
 
 	// internal variables
 	std::vector<int> iup, idown, jup, jdown, topovecind;

@@ -90,6 +90,7 @@ Cstream_power_model::Cstream_power_model(void)
 	Parameters.Add_Grid_Output(NULL, "OUTPUT", _TL("Output"), _TL("Simulation output"));
 	Parameters.Add_String(NULL, "OUTPUT_NAME", _TL("Output Name"), _TL("Output Name"), "StreamPowerModelOutput");
 	Parameters.Add_FilePath(NULL, "OUTPUT_DIR", _TL("Output Directory"), _TL("Directory used for saving regular GeoTIFF snaphots of the model as it progresses."), NULL, NULL, false, true, false); 
+	
 
 	//m_Grid_Target.Create(&Parameters);
 	CSG_Parameter	*pNode;
@@ -100,7 +101,7 @@ Cstream_power_model::Cstream_power_model(void)
 		CSG_String::Format(SG_T("%s|%s|"),
 			_TL("Scalar"),
 			_TL("Grid")
-		), 1
+		), 0
 	);
 
 
@@ -111,8 +112,8 @@ Cstream_power_model::Cstream_power_model(void)
 		_TL("")
 	);
 	
-	Parameters.Add_Value(pNode, "U_SCALAR", _TL("Uplift"), _TL("Uplift field, rate per kyrs"), PARAMETER_TYPE_Double, 1, 0, true);
-	Parameters.Add_Value(pNode, "K_SCALAR", _TL("Diffusion"), _TL("Diffusion parameter kyr^-1"), PARAMETER_TYPE_Double, 30, 0, true);
+	Parameters.Add_Value(pNode, "U_SCALAR", _TL("Uplift (per kyrs)"), _TL("Uplift rate per kyrs"), PARAMETER_TYPE_Double, 1, 0, true);
+	Parameters.Add_Value(pNode, "K_SCALAR", _TL("Diffusion (per kyrs)"), _TL("Diffusion rate per kyrs"), PARAMETER_TYPE_Double, 30, 0, true);
 
 	// Grid parameters
 	pNode	= Parameters.Add_Node(
@@ -120,12 +121,17 @@ Cstream_power_model::Cstream_power_model(void)
 		_TL("")
 	);
 
-	Parameters.Add_Grid(pNode, "U_GRID"	, _TL("Uplift"), _TL("Uplift field, rate per kyrs"), PARAMETER_OPTIONAL);
-	Parameters.Add_Grid(pNode, "K_GRID"	, _TL("Diffusion"), _TL("Diffusion field, rate per kyrs"), PARAMETER_OPTIONAL);
+	Parameters.Add_Grid(pNode, "U_GRID"	, _TL("Uplift (per kyrs)"), _TL("Uplift field, rate per kyrs"), PARAMETER_OPTIONAL);
+	Parameters.Add_Grid(pNode, "K_GRID"	, _TL("Diffusion (per kyrs)"), _TL("Diffusion field, rate per kyrs"), PARAMETER_OPTIONAL);
 	
-	Parameters.Add_Value(NULL, "T", _TL("Timestep"), _TL("Timestep in kyrs"), PARAMETER_TYPE_Double, 1.0, 0, true);
-	Parameters.Add_Value(NULL, "DURATION", _TL("Duration"), _TL("Duration in kyrs"), PARAMETER_TYPE_Double, 1, 0, true);
-	
+	Parameters.Add_Value(NULL, "T", _TL("Timestep (kyrs)"), _TL("Timestep in thousands of years. A lower timestep will produce more accurate results but can take longer to run."), PARAMETER_TYPE_Double, 0.001, 0, true);
+	Parameters.Add_Value(NULL, "DURATION", _TL("Duration (kyrs)"), _TL("Duration in kyrs"), PARAMETER_TYPE_Double, 1, 0, true);
+	Parameters.Add_Value(NULL, "OUTPUT_FREQUENCY", _TL("Output Frequency (yrs)"), _TL("Frequency at which to save output in years"), PARAMETER_TYPE_Int, 10, 0, true);
+	Parameters.Add_Value(
+		NULL, "SCALE_TIMESTEP"		, _TL("Auto-scale Timestep"),
+		_TL("Enabling this option can lead to more accurate results but will take significantly longer"),
+		PARAMETER_TYPE_Bool, false
+	);		
 
 }
 
@@ -175,9 +181,20 @@ std::vector<std::vector<double>> Cstream_power_model::GridToVector(CSG_Grid* gri
 
 bool Cstream_power_model::On_Execute(void)
 {
+	bool save_snapshots = true;
 	CSG_String outputDir = Parameters("OUTPUT_DIR")->asFilePath()->asString();
+	if (outputDir.is_Empty())
+	{
+		save_snapshots = false;
+		if(!Message_Dlg_Confirm(CSG_String::Format(SG_T("No output directory specified, continue anyway?")), _TL("Warning")))
+		{
+			return false;
+		}
+	}
+
 	input = Parameters("INPUT")->asGrid();
 	bool scalar = false;
+	int output_freq = Parameters("OUTPUT_FREQUENCY")->asInt();
 
 	//Message_Add(Parameters("METHOD")->asChoice()->asString());
 	//Message_Add(CSG_String::Format(SG_T("%d method"),Parameters("METHOD")->asChoice()->asInt()));
@@ -206,6 +223,7 @@ bool Cstream_power_model::On_Execute(void)
 	StreamErosionModelParameters p;
 	p.timestep = Parameters("T")->asDouble();
 	p.duration = Parameters("DURATION")->asDouble();
+	p.scale_timestep = Parameters("SCALE_TIMESTEP")->asBool();
 
 	StreamPower sp = StreamPower(p);
 	sp.Init(input->Get_NX(), input->Get_NY(), input->Get_XMin(), input->Get_YMin(), input->Get_Cellsize(), input->Get_NoData_Value());
@@ -227,25 +245,42 @@ bool Cstream_power_model::On_Execute(void)
 	DataObject_Update(output, true);
 	
 	unsigned long lyrs = 0;
-	CSG_String ofname = CSG_String::Format(SG_T("%s_%lu_yrs"), output->Get_File_Type(), lyrs);
+	CSG_String ofname = CSG_String::Format(SG_T("%s_%lu_years"), output->Get_Name(), lyrs);
 	CSG_String outputPath = SG_File_Make_Path(outputDir, ofname, CSG_String("tif")); 
-	Message_Add(outputPath);
+	if (save_snapshots)
+	{
+		if(!ExportGrid(output, outputPath))
+		{
+			return false;
+		}
+	}
+	
 
-	Process_Set_Text(CSG_String::Format(SG_T("%lu yrs"), lyrs));
+	Process_Set_Text(CSG_String::Format(SG_T("%lu years"), lyrs));
+	unsigned long next_output_time = output_freq;
 	while (Process_Get_Okay(true) && sp.time < sp.duration)
 	{
 		sp.Step();
 		lyrs = (unsigned long)(sp.time * 1000);
-		Process_Set_Text(CSG_String::Format(SG_T("%lu yrs"), lyrs));
+		Process_Set_Text(CSG_String::Format(SG_T("%lu years"), lyrs));
 		Set_Progress( (sp.time / sp.duration) * 100 );
 		VectorToGrid(sp.GetTopo(), output);
 		DataObject_Update(output, true);
 
 		// save state
-		ofname = CSG_String::Format(SG_T("%s_%lu_yrs"), output->Get_Name(), lyrs);
-		outputPath = SG_File_Make_Path(outputDir, ofname, CSG_String("tif")); 
-		Message_Add(outputPath);
-		//ExportGrid(output, outputPath);
+		if (lyrs == next_output_time)
+		{
+			ofname = CSG_String::Format(SG_T("%s_%lu_years"), output->Get_Name(), lyrs);
+			outputPath = SG_File_Make_Path(outputDir, ofname, CSG_String("tif")); 
+			if (save_snapshots)
+			{
+				if(!ExportGrid(output, outputPath))
+				{
+					return false;
+				}	
+			}
+			next_output_time += output_freq;
+		}
 	}
 	
 	
@@ -254,7 +289,9 @@ bool Cstream_power_model::On_Execute(void)
 
 bool Cstream_power_model::ExportGrid(CSG_Grid* grid, CSG_String path)
 {
-	/*
+	Message_Add(path);
+
+	
 	// GDAL related options
 	TSG_Data_Type type = grid->Get_Type();
 	CSG_String driver = CSG_String("GTiff");
@@ -263,7 +300,7 @@ bool Cstream_power_model::ExportGrid(CSG_Grid* grid, CSG_String path)
 	CSG_GDAL_DataSet dataset;
 	
 
-	if( !dataset.Open_Write(path, driver, options, type, 1, *Get_System(), prj) )
+	if( !dataset.Open_Write(path, driver, options, type, 1, grid->Get_System(), prj) )
 	{
 		Error_Set(CSG_String::Format(SG_T("%s: '%s' "), _TL("Failed to open file for writing: "), path.c_str()));
 		return false;
@@ -275,7 +312,7 @@ bool Cstream_power_model::ExportGrid(CSG_Grid* grid, CSG_String path)
 		Error_Set(CSG_String::Format(SG_T("%s: '%s' "), _TL("Failed to close file after writing: "), path.c_str()));
 		return false;
 	}
-	*/
+	
 	return true;
 }
 

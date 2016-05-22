@@ -79,11 +79,13 @@ protected:
 	CSG_Grid *input, *u_grid_input, *k_grid_input, *output;
 	double u_scalar_input, k_scalar_input;
 	std::vector<std::vector<double>> GridToVector(CSG_Grid* grid);
+
+
 	void VectorToGrid(std::vector<std::vector<double>> arr, CSG_Grid* grid);
 	bool ExportGrid(CSG_Grid* grid, CSG_String path);
 
-	virtual int						On_Parameter_Changed	(CSG_Parameters *pParameters, CSG_Parameter *pParameter);
-	virtual int						On_Parameters_Enable	(CSG_Parameters *pParameters, CSG_Parameter *pParameter);
+	virtual int		On_Parameter_Changed	(CSG_Parameters *pParameters, CSG_Parameter *pParameter);
+	virtual int		On_Parameters_Enable	(CSG_Parameters *pParameters, CSG_Parameter *pParameter);
 	virtual bool	On_Execute	(void);
 };
 

@@ -305,10 +305,6 @@ void StreamPower::Avalanche(int i, int j)
 
 void StreamPower::Start()
 {
-	//char fname[100];
-	//sprintf(fname, "C:/outputs/saga_erosion_initial.asc");
-	//PrintState(fname);
-
 	time = 0;
 	while (time < duration)
 	{
@@ -411,36 +407,39 @@ void StreamPower::Step()
 
 
 	time += timestep;
-	if (max > 0.3 * deltax / timestep)
+	if (scale_timestep)
 	{
-		time -= timestep;
-		timestep /= 2.0;
-		//std::cout << "First time modification" << "\n";
-		for (i = 1; i < lattice_size_x - 1; i++)
+		if (max > 0.3 * deltax / timestep)
 		{
-			for (j = 1; j < lattice_size_y - 1; j++)
+			time -= timestep;
+			timestep /= 2.0;
+			//std::cout << "First time modification" << "\n";
+			for (i = 1; i < lattice_size_x - 1; i++)
 			{
-				topo[i][j] = topoold[i][j] - U[i][j] * timestep;
+				for (j = 1; j < lattice_size_y - 1; j++)
+				{
+					topo[i][j] = topoold[i][j] - U[i][j] * timestep;
+				}
+			}
+		}
+		else
+		{
+			if (max < 0.03 * deltax / timestep)
+			{
+				timestep *= 1.2;
+				//std::cout << "Second time modification" << "\n";
+			}
+			for (j = 0; j < lattice_size_y; j++)
+			{
+				for (i = 0; i < lattice_size_x; i++)
+				{
+					topoold[i][j] = topo[i][j];
+				}
+
 			}
 		}
 	}
-	else
-	{
-		if (max < 0.03 * deltax / timestep)
-		{
-			timestep *= 1.2;
-			//std::cout << "Second time modification" << "\n";
-		}
-		for (j = 0; j < lattice_size_y; j++)
-		{
-			for (i = 0; i < lattice_size_x; i++)
-			{
-				topoold[i][j] = topo[i][j];
-			}
-
-		}
-
-	}
+	
 }
 
 void StreamPower::PrintState(char* fname)
@@ -685,6 +684,7 @@ StreamPower::StreamPower(StreamErosionModelParameters p)
 	// user params
 	timestep = p.timestep;
 	duration = p.duration;
+	scale_timestep = p.scale_timestep;
 
 }
 
