@@ -72,6 +72,14 @@
 //---------------------------------------------------------
 Cproperror::Cproperror(void)
 {
+
+	#ifdef _WIN32
+		CSG_String UserHomeDir = CSG_String(getenv("USERPROFILE"));
+	#else
+		CSG_String UserHomeDir = CSG_String(getenv("HOME"));
+	#endif
+	CSG_String DefaultTempDir = SG_File_Make_Path(UserHomeDir, CSG_String("Saga_GIS_tmp"));
+
 	// Module info
 	Set_Name		(_TL("Propagated Error Calculation"));
 	Set_Author		(SG_T("Sina Masoud-Ansari"));
@@ -92,14 +100,15 @@ Cproperror::Cproperror(void)
 	Parameters.Add_Grid(NULL, "ERRORB"	, _TL("Error B"), _TL("Second error raster"), PARAMETER_INPUT);
 	Parameters.Add_Grid(NULL, "PROPERROR", _TL("Propagated Error"), _TL("Output propagated error raster"), PARAMETER_OUTPUT);
 
-	ErrorA_InputPath = SG_File_Make_Path(GCDBinDir, CSG_String("errora"), CSG_String("tif"));
-	ErrorB_InputPath = SG_File_Make_Path(GCDBinDir, CSG_String("errorb"), CSG_String("tif"));
-	PropError_OutputPath = SG_File_Make_Path(GCDBinDir, CSG_String("properror"), CSG_String("tif"));
+	//Other
+	Parameters.Add_FilePath(NULL, "TEMP_DIR", _TL("Temp File Directory"), _TL("Directory used for storing temporary files during processing."), NULL, DefaultTempDir, false, true, false); 
 
 	//GDAL
 	GDALDriver = CSG_String("GTiff");
 	GDALOptions = CSG_String(""); 
 	Get_Projection(Projection);
+
+
 
 }
 
@@ -117,6 +126,11 @@ bool Cproperror::On_Execute(void)
 	{
 		return false;
 	}
+	CSG_String TempDirPath = Parameters("TEMP_DIR")->asFilePath()->asString();
+
+	ErrorA_InputPath = SG_File_Make_Path(TempDirPath, CSG_String("errora"), CSG_String("tif"));
+	ErrorB_InputPath = SG_File_Make_Path(TempDirPath, CSG_String("errorb"), CSG_String("tif"));
+	PropError_OutputPath = SG_File_Make_Path(TempDirPath, CSG_String("properror"), CSG_String("tif"));
 
 	// convert grids to tiffs for command input
 	CSG_Grid* InputGrids [2] = {ErrorA, ErrorB};

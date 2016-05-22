@@ -72,6 +72,14 @@
 //---------------------------------------------------------
 Cdodstatsprob::Cdodstatsprob(void)
 {
+
+	#ifdef _WIN32
+		CSG_String UserHomeDir = CSG_String(getenv("USERPROFILE"));
+	#else
+		CSG_String UserHomeDir = CSG_String(getenv("HOME"));
+	#endif
+	CSG_String DefaultTempDir = SG_File_Make_Path(UserHomeDir, CSG_String("Saga_GIS_tmp"));
+
 	// Module info
 	Set_Name		(_TL("Probabilistic Threshold Statistics"));
 	Set_Author		(SG_T("Sina Masoud-Ansari"));
@@ -92,9 +100,8 @@ Cdodstatsprob::Cdodstatsprob(void)
 	Parameters.Add_Grid(NULL, "DOD_THRESHOLD"	, _TL("Threshold"), _TL("Thresholded raster"), PARAMETER_INPUT);
 	Parameters.Add_Grid(NULL, "DOD_PROPERROR"	, _TL("Propagated Error"), _TL("Propagated error raster"), PARAMETER_INPUT);
 
-	DoD_InputPath = SG_File_Make_Path(GCDBinDir, CSG_String("dodinput"), CSG_String("tif"));
-	DoD_ThresholdPath = SG_File_Make_Path(GCDBinDir, CSG_String("dodthresh"), CSG_String("tif"));
-	DoD_PropErrorPath = SG_File_Make_Path(GCDBinDir, CSG_String("dodproperror"), CSG_String("tif"));
+	//Other
+	Parameters.Add_FilePath(NULL, "TEMP_DIR", _TL("Temp File Directory"), _TL("Directory used for storing temporary files during processing."), NULL, DefaultTempDir, false, true, false); 
 
 	// Tables
 	Parameters.Add_Table(NULL, "STATS_OUTPUT", _TL("DoD Output Statistics"), _TL("DoD Statistics"), PARAMETER_OUTPUT); 
@@ -120,6 +127,11 @@ bool Cdodstatsprob::On_Execute(void)
 	{
 		return false;
 	}
+	CSG_String TempDirPath = Parameters("TEMP_DIR")->asFilePath()->asString();
+
+	DoD_InputPath = SG_File_Make_Path(TempDirPath, CSG_String("dodinput"), CSG_String("tif"));
+	DoD_ThresholdPath = SG_File_Make_Path(TempDirPath, CSG_String("dodthresh"), CSG_String("tif"));
+	DoD_PropErrorPath = SG_File_Make_Path(TempDirPath, CSG_String("dodproperror"), CSG_String("tif"));
 
 	// convert grids to tiffs for command input
 	CSG_Grid* InputGrids [3] = {DoD_Input, DoD_Threshold, DoD_PropError};

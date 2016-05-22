@@ -72,6 +72,14 @@
 //---------------------------------------------------------
 Cdodthresholdprobsc::Cdodthresholdprobsc(void)
 {
+	#ifdef _WIN32
+		CSG_String UserHomeDir = CSG_String(getenv("USERPROFILE"));
+	#else
+		CSG_String UserHomeDir = CSG_String(getenv("HOME"));
+	#endif
+	CSG_String DefaultTempDir = SG_File_Make_Path(UserHomeDir, CSG_String("Saga_GIS_tmp"));
+
+
 	// Module info
 	Set_Name		(_TL("Probabilistic Threshold with Spatial Coherence"));
 	Set_Author		(SG_T("Sina Masoud-Ansari"));
@@ -101,15 +109,8 @@ Cdodthresholdprobsc::Cdodthresholdprobsc(void)
 	Parameters.Add_Value(NULL, "CELL_HEIGHT", _TL("Cell Height"), _TL("Moving window cell height"), PARAMETER_TYPE_Int, 10, 0, true);
 	Parameters.Add_Value(NULL, "THRESHOLD_VALUE", _TL("Probability Threshold"), _TL("Probability threshold"), PARAMETER_TYPE_Double, 0.5, 0, true, 1, true);
 
-	DoD_InputPath = SG_File_Make_Path(GCDBinDir, CSG_String("dodinput"), CSG_String("tif"));
-	NewSurveyError_InputPath = SG_File_Make_Path(GCDBinDir, CSG_String("newsurveyerror"), CSG_String("tif"));
-	OldSurveyError_InputPath = SG_File_Make_Path(GCDBinDir, CSG_String("oldsurveyerror"), CSG_String("tif"));
-	Conditional_InputPath = SG_File_Make_Path(GCDBinDir, CSG_String("conditional"), CSG_String("tif"));
-	Erosion_InputPath = SG_File_Make_Path(GCDBinDir, CSG_String("erosion"), CSG_String("tif"));
-	Deposition_InputPath = SG_File_Make_Path(GCDBinDir, CSG_String("deposition"), CSG_String("tif"));
-	Threshold_OutputPath = SG_File_Make_Path(GCDBinDir, CSG_String("theshoutput"), CSG_String("tif"));
-	PriorProb_OutputPath = SG_File_Make_Path(GCDBinDir, CSG_String("priorproboutput"), CSG_String("tif"));
-	PostProb_OutputPath = SG_File_Make_Path(GCDBinDir, CSG_String("postproboutput"), CSG_String("tif"));
+	//Other
+	Parameters.Add_FilePath(NULL, "TEMP_DIR", _TL("Temp File Directory"), _TL("Directory used for storing temporary files during processing."), NULL, DefaultTempDir, false, true, false); 
 
 	//GDAL
 	GDALDriver = CSG_String("GTiff");
@@ -132,6 +133,19 @@ bool Cdodthresholdprobsc::On_Execute(void)
 	{
 		return false;
 	}
+	CSG_String TempDirPath = Parameters("TEMP_DIR")->asFilePath()->asString();
+
+	DoD_InputPath = SG_File_Make_Path(TempDirPath, CSG_String("dodinput"), CSG_String("tif"));
+	NewSurveyError_InputPath = SG_File_Make_Path(TempDirPath, CSG_String("newsurveyerror"), CSG_String("tif"));
+	OldSurveyError_InputPath = SG_File_Make_Path(TempDirPath, CSG_String("oldsurveyerror"), CSG_String("tif"));
+	Conditional_InputPath = SG_File_Make_Path(TempDirPath, CSG_String("conditional"), CSG_String("tif"));
+	Erosion_InputPath = SG_File_Make_Path(TempDirPath, CSG_String("erosion"), CSG_String("tif"));
+	Deposition_InputPath = SG_File_Make_Path(TempDirPath, CSG_String("deposition"), CSG_String("tif"));
+	Threshold_OutputPath = SG_File_Make_Path(TempDirPath, CSG_String("theshoutput"), CSG_String("tif"));
+	PriorProb_OutputPath = SG_File_Make_Path(TempDirPath, CSG_String("priorproboutput"), CSG_String("tif"));
+	PostProb_OutputPath = SG_File_Make_Path(TempDirPath, CSG_String("postproboutput"), CSG_String("tif"));
+
+
 
 	// convert grids to tiffs for command input
 	CSG_Grid* InputGrids [6] = {DoD_Input, NewSurveyError_Input, OldSurveyError_Input, Conditional_Input, Erosion_Input, Deposition_Input};

@@ -72,6 +72,14 @@
 //---------------------------------------------------------
 Cuniformerror::Cuniformerror(void)
 {
+
+	#ifdef _WIN32
+		CSG_String UserHomeDir = CSG_String(getenv("USERPROFILE"));
+	#else
+		CSG_String UserHomeDir = CSG_String(getenv("HOME"));
+	#endif
+	CSG_String DefaultTempDir = SG_File_Make_Path(UserHomeDir, CSG_String("Saga_GIS_tmp"));
+
 	// Module info
 	Set_Name		(_TL("Uniform Error Calculation"));
 	Set_Author		(SG_T("Sina Masoud-Ansari"));
@@ -92,8 +100,8 @@ Cuniformerror::Cuniformerror(void)
 	Parameters.Add_Grid(NULL, "UNIFORM_ERROR", _TL("Uniform Error"), _TL("Output uniform error raster"), PARAMETER_OUTPUT);
 	Parameters.Add_Value(NULL, "UNIFORM_ERROR_VALUE", _TL("Uniform Error Value"), _TL("Uniform error value for output raster"), PARAMETER_TYPE_Double, 0);
 
-	Reference_InputPath = SG_File_Make_Path(GCDBinDir, CSG_String("reference"), CSG_String("tif"));
-	UniformError_OutputPath = SG_File_Make_Path(GCDBinDir, CSG_String("uniformerror"), CSG_String("tif"));
+	//Other
+	Parameters.Add_FilePath(NULL, "TEMP_DIR", _TL("Temp File Directory"), _TL("Directory used for storing temporary files during processing."), NULL, DefaultTempDir, false, true, false); 
 
 	//GDAL
 	GDALDriver = CSG_String("GTiff");
@@ -116,6 +124,10 @@ bool Cuniformerror::On_Execute(void)
 	{
 		return false;
 	}
+	CSG_String TempDirPath = Parameters("TEMP_DIR")->asFilePath()->asString();
+
+	Reference_InputPath = SG_File_Make_Path(TempDirPath, CSG_String("reference"), CSG_String("tif"));
+	UniformError_OutputPath = SG_File_Make_Path(TempDirPath, CSG_String("uniformerror"), CSG_String("tif"));
 
 	// convert grids to tiffs for command input
 	CSG_Grid* InputGrids [1] = {Reference};
