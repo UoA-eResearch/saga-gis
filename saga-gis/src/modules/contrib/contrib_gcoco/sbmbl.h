@@ -140,13 +140,18 @@ protected:
 	virtual bool	On_Execute	(void);
 
 private:
-	void main();
+	bool main_loop();
 	void UpdateGrid();
 
 	// OUTPUT
 
 	CSG_Grid* pGridHeight;
 	CSG_Grid* pGridCoarse;
+
+	CSG_String outputDir, ofname, outputPath;
+	bool save_snapshots;
+	int output_freq;
+	unsigned long next_output_time;
 
 	// DIMENSIONS
 
@@ -267,7 +272,7 @@ private:
 
 	/* sed trans */
 
-	void DoIteration();         /* function that makes things happen*/
+	bool DoIteration();         /* function that makes things happen*/
 	void DoIterationDummy();    /* function that doesn't really make things happen*/
 
 	void SedTransFine();
@@ -286,6 +291,7 @@ private:
 	void  UpdateForcingClock();
 	void  WriteForcingConditions();
 	double GetPercentCompleted();
+	bool ExportGrid(CSG_Grid* gird, CSG_String path);
 };
 
 

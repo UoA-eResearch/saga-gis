@@ -152,7 +152,7 @@
     </Midl>
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>..\..\..\saga_core;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\..\modules\io\io_gdal;$(GDAL)\include;..\..\..\saga_core;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_DEBUG;WIN32;_USRDLL;_MBCS;_TYPEDEF_BYTE;_TYPEDEF_WORD;_SAGA_MSW;_SAGA_VC;_SAGA_UNICODE;$(ProjectName)_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -173,10 +173,10 @@
       <Culture>0x0407</Culture>
     </ResourceCompile>
     <Link>
-      <AdditionalDependencies>saga_api.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>gdal_i.lib;io_gdal.lib;saga_api.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>$(OutDir)$(ProjectName).dll</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <AdditionalLibraryDirectories>..\..\..\..\bin\saga_vc_$(Platform)_d\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(GDAL)\lib;..\..\..\..\bin\saga_vc_$(Platform)_d\modules;..\..\..\..\bin\saga_vc_$(Platform)_d\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ProgramDatabaseFile>$(OutDir)$(ProjectName).pdb</ProgramDatabaseFile>
       <SubSystem>Windows</SubSystem>
@@ -254,7 +254,7 @@
     <ClCompile>
       <Optimization>MaxSpeed</Optimization>
       <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
-      <AdditionalIncludeDirectories>..\..\..\saga_core;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\..\modules\io\io_gdal;$(GDAL)\include;..\..\..\saga_core;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>NDEBUG;WIN32;_USRDLL;_MBCS;_TYPEDEF_BYTE;_TYPEDEF_WORD;_SAGA_MSW;_SAGA_VC;_SAGA_UNICODE;$(ProjectName)_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
@@ -274,10 +274,10 @@
       <Culture>0x0407</Culture>
     </ResourceCompile>
     <Link>
-      <AdditionalDependencies>saga_api.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>gdal_i.lib;io_gdal.lib;saga_api.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>$(OutDir)$(ProjectName).dll</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <AdditionalLibraryDirectories>..\..\..\..\bin\saga_vc_$(Platform)\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(GDAL)\lib;..\..\..\..\bin\saga_vc_$(Platform)\modules;..\..\..\..\bin\saga_vc_$(Platform)\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <ProgramDatabaseFile>$(OutDir)$(ProjectName).pdb</ProgramDatabaseFile>
       <SubSystem>Windows</SubSystem>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
@@ -320,6 +320,11 @@
     <ClCompile Include="dunes_model.cpp" />
     <ClCompile Include="MLB_Interface.cpp" />
     <ClCompile Include="sbmbl.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\io\io_gdal\io_gdal.vcxproj">
+      <Project>{17711e60-c0c9-424f-a8da-4b0ac4c45c16}</Project>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

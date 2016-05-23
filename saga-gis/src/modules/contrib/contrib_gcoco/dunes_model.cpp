@@ -59,7 +59,7 @@
 CDunes::CDunes(void)
 {
 	Set_Name		(_TL("Dunes"));
-	Set_Author		(SG_T("S. Masoud-Ansari, G. Soudlenkov, G. Coco, J. Tunnicliffe 2014-2015"));
+	Set_Author		(SG_T("S. Masoud-Ansari, G. Soudlenkov, G. Coco, J. Tunnicliffe"));
 	Set_Description	(_TW("Giovanni's dune code"));
 
 	Parameters.Add_Grid(NULL, "INPUT"	, _TL("Input DEM"), _TL("Initial topography"), PARAMETER_INPUT);
