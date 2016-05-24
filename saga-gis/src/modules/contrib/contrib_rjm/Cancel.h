@@ -20,6 +20,7 @@ protected:
 private:
 	// general
 	CSG_String UserHomeDir;
+	CSG_String RJMTempDir;
 
 	// rjm binaries
 	CSG_String RJMBinDir;

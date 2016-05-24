@@ -37,11 +37,12 @@ CSubmit::CSubmit(void)
 	RJMConfigFilePath = SG_File_Make_Path(RJMConfigDirPath, RJMConfigFilename, CSG_String("ini"));
 
 	RJMBinDir = SG_File_Make_Path(CSG_String("bin"), CSG_String("rjm"));
+	RJMTempDir = SG_File_Make_Path(UserHomeDir, CSG_String("Saga_GIS_tmp"));
 
-	RJMJobList = SG_File_Make_Path(UserHomeDir, CSG_String("joblist"), CSG_String("txt"));
+	RJMJobList = SG_File_Make_Path(RJMTempDir, CSG_String("joblist"), CSG_String("txt"));
 	RJMJobList = SG_File_Get_Path_Absolute(RJMJobList);
 
-	RJMLogFilePath = SG_File_Make_Path(UserHomeDir, CSG_String("rjmlog"), CSG_String("txt"));
+	RJMLogFilePath = SG_File_Make_Path(RJMTempDir, CSG_String("rjmlog"), CSG_String("txt"));
 	RJMLogFilePath = SG_File_Get_Path_Absolute(RJMLogFilePath);
 
 	RJMConfigure = SG_File_Make_Path(RJMBinDir, CSG_String("rjm_configure"), CSG_String("exe"));
@@ -138,6 +139,16 @@ CSubmit::~CSubmit(void){}
 
 bool CSubmit::On_Execute(void)
 {
+
+	// make sure temp dir exists
+	if (!SG_Dir_Exists(RJMTempDir))
+	{
+		if (!SG_Dir_Create(RJMTempDir))
+		{
+			Error_Set(CSG_String::Format(SG_T("%s: '%s' "), _TL("Failed to create temp directory"), RJMTempDir.c_str()));
+		}
+	}
+
 	if (ConfigExists())
 	{
 		ReadConfig();
@@ -602,10 +613,10 @@ CSG_String CSubmit::GetModules()
 {
 	CSG_String modules("None|Refresh|");
 
-	CSG_String OutFile = SG_File_Make_Path(RJMBinDir, CSG_String("out"), CSG_String("txt"));
+	CSG_String OutFile = SG_File_Make_Path(RJMTempDir, CSG_String("out"), CSG_String("txt"));
 	OutFile = SG_File_Get_Path_Absolute(OutFile);
 
-	CSG_String ErrorFile = SG_File_Make_Path(RJMBinDir, CSG_String("error"), CSG_String("txt"));
+	CSG_String ErrorFile = SG_File_Make_Path(RJMTempDir, CSG_String("error"), CSG_String("txt"));
 	ErrorFile = SG_File_Get_Path_Absolute(ErrorFile);
 
 	CSG_String cmd = CSG_String::Format(SG_T("%s module avail >%s 2>%s"), RJMRunRemote.c_str(), OutFile.c_str(), ErrorFile.c_str());
