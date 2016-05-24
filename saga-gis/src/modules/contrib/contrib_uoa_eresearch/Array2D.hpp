@@ -1,6 +1,8 @@
 #ifndef _array_2d_hpp_
 #define _array_2d_hpp_
 
+// Richard Barnes (rbarnes@umn.edu)
+
 //#include "gdal_priv.h"
 #include <vector>
 #include <iostream>
