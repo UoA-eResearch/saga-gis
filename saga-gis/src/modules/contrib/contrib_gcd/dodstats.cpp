@@ -72,6 +72,14 @@
 //---------------------------------------------------------
 Cdodstats::Cdodstats(void)
 {
+
+	#ifdef _WIN32
+		CSG_String UserHomeDir = CSG_String(getenv("USERPROFILE"));
+	#else
+		CSG_String UserHomeDir = CSG_String(getenv("HOME"));
+	#endif
+	CSG_String DefaultTempDir = SG_File_Make_Path(UserHomeDir, CSG_String("Saga_GIS_tmp"));
+
 	// Module info
 	Set_Name		(_TL("Statistics"));
 	Set_Author		(SG_T("Sina Masoud-Ansari"));
@@ -89,7 +97,9 @@ Cdodstats::Cdodstats(void)
 
 	// Grids
 	Parameters.Add_Grid(NULL, "DOD_INPUT"	, _TL("DoD"), _TL("Input grid to be used as DoD"), PARAMETER_INPUT);
-	DoD_InputPath = SG_File_Make_Path(GCDBinDir, CSG_String("dodinput"), CSG_String("tif"));
+
+	//Other
+	Parameters.Add_FilePath(NULL, "TEMP_DIR", _TL("Temp File Directory"), _TL("Directory used for storing temporary files during processing."), NULL, DefaultTempDir, false, true, false); 
 
 	// Tables
 	Parameters.Add_Table(NULL, "STATS_OUTPUT", _TL("DoD Output Statistics"), _TL("DoD Statistics"), PARAMETER_OUTPUT); 
@@ -115,6 +125,9 @@ bool Cdodstats::On_Execute(void)
 	{
 		return false;
 	}
+	CSG_String TempDirPath = Parameters("TEMP_DIR")->asFilePath()->asString();
+
+	DoD_InputPath = SG_File_Make_Path(TempDirPath, CSG_String("dodinput"), CSG_String("tif"));
 
 	// convert grids to tiffs for command input
 	CSG_Strings InputGridPaths = CSG_Strings();

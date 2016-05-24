@@ -39,6 +39,14 @@
 
 CPeukerDouglas::CPeukerDouglas(void)
 {
+	#ifdef _WIN32
+		CSG_String UserHomeDir = CSG_String(getenv("USERPROFILE"));
+	#else
+		CSG_String UserHomeDir = CSG_String(getenv("HOME"));
+	#endif
+
+	CSG_String DefaultTempDir = SG_File_Make_Path(UserHomeDir, CSG_String("Saga_GIS_tmp"));
+
 	// INFO
 	Set_Name(_TL("Peuker Douglas"));
 	Set_Author(SG_T("S. Masoud-Ansari, J. Tunnicliffe, D. Tarboton"));
@@ -62,7 +70,10 @@ CPeukerDouglas::CPeukerDouglas(void)
 
 
 	Parameters.Add_Value(NULL, "NPROC"	, _TL("Number of Processes"), _TL("The number of stripes that the domain will be divided into and the number of MPI parallel processes that will be spawned to evaluate each of the stripes"), PARAMETER_TYPE_Int, SG_Get_Max_Num_Procs_Omp(), 1, true, SG_Get_Max_Num_Procs_Omp(), true);
-
+	
+	// Other
+	Parameters.Add_FilePath(NULL, "TEMP_DIR", _TL("Temp File Directory"), _TL("Directory used for storing temporary files during processing."), NULL, DefaultTempDir, false, true, false); 
+	
 }
 
 
@@ -93,7 +104,8 @@ bool CPeukerDouglas::On_Execute(void)
 	Get_Projection(Projection);
 	Type = FEL_INPUT_Grid->Get_Type();
 
-	TempDirPath = SG_File_Get_Path_Absolute(CSG_String("taudem_tmp"));
+	//TempDirPath = SG_File_Get_Path_Absolute(CSG_String("taudem_tmp"));
+	TempDirPath = Parameters("TEMP_DIR")->asFilePath()->asString();
 
 	FEL_INPUT_FileName = InputBasename + CSG_String("fel");
 	FEL_INPUT_FilePath = SG_File_Make_Path(TempDirPath, FEL_INPUT_FileName, CSG_String("tif")); 

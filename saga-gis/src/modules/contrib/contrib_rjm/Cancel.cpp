@@ -21,6 +21,7 @@ CCancel::CCancel(void)
 	#else
 		UserHomeDir = CSG_String(getenv("HOME"));
 	#endif
+
 	CSG_Parameter	*pNodeLogging;
 	CSG_Parameter	*pNodeConfig;
 	CSG_Parameter	*pNodeConfigCluster;
@@ -33,6 +34,7 @@ CCancel::CCancel(void)
 	CSG_String RJMConfigDirPath = SG_File_Make_Path(UserHomeDir, RJMConfigDirName);
 	RJMConfigFilePath = SG_File_Make_Path(RJMConfigDirPath, RJMConfigFilename, CSG_String("ini"));
 
+	
 	RJMBinDir = SG_File_Make_Path(CSG_String("bin"), CSG_String("rjm"));
 
 	RJMJobList = SG_File_Make_Path(UserHomeDir, CSG_String("joblist"), CSG_String("txt"));
@@ -48,7 +50,6 @@ CCancel::CCancel(void)
 	RJMBatchCancel = SG_File_Get_Path_Absolute(RJMBatchCancel);
 
 	// Params
-
 	Parameters.Add_FilePath(NULL, "JOB_LIST", "Job List", _TL("File to keep track of current jobs"), NULL, false, false, false, false);
 	Parameters.Add_Value(NULL, "POLLING_INTERVAL", _TL("Check Interval"), _TL("Seconds to wait before job cancellation status."), PARAMETER_TYPE_Int, 1, 1, true);
 

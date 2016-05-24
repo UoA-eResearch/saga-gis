@@ -1,5 +1,5 @@
 /**********************************************************
- * Version $Id: stream_power_model.h 1925 2014-01-09 12:15:18Z oconrad $
+ * Version $Id$
  *********************************************************/
 
 ///////////////////////////////////////////////////////////
@@ -9,11 +9,11 @@
 //      System for Automated Geoscientific Analyses      //
 //                                                       //
 //                    Module Library:                    //
-//                       contrib_uoa_eresearch                        //
+//                       contrib_gcoco                        //
 //                                                       //
 //-------------------------------------------------------//
 //                                                       //
-//                      stream_power_model.h                      //
+//                   MLB_Interface.cpp                   //
 //                                                       //
 //                 Copyright (C) 2007 by                 //
 //                        Author                         //
@@ -54,40 +54,80 @@
 
 ///////////////////////////////////////////////////////////
 //														 //
+//			The Module Link Library Interface			 //
+//														 //
+///////////////////////////////////////////////////////////
+
+//---------------------------------------------------------
+// 1. Include the appropriate SAGA-API header...
+
+#include "MLB_Interface.h"
+
+
+//---------------------------------------------------------
+// 2. Place general module library informations here...
+
+CSG_String Get_Info(int i)
+{
+	switch( i )
+	{
+	case MLB_INFO_Name:	default:
+		return( _TL("Dunes") );
+
+	case MLB_INFO_Category:
+		return( _TL("University of Auckland") );
+
+	case MLB_INFO_Author:
+		return( SG_T("George Orwell (c) 1984") );
+
+	case MLB_INFO_Description:
+		return( _TL("I am a module library template.") );
+
+	case MLB_INFO_Version:
+		return( SG_T("1.0") );
+
+	case MLB_INFO_Menu_Path:
+		return( _TL("University of Auckland|Dunes") );
+	}
+}
+
+
+//---------------------------------------------------------
+// 3. Include the headers of your modules here...
+
+#include "sbmbl.h"
+#include "dunes_model.h"
+
+
+//---------------------------------------------------------
+// 4. Allow your modules to be created here...
+
+CSG_Module *		Create_Module(int i)
+{
+	// Don't forget to continuously enumerate the case switches
+	// when adding new modules! Also bear in mind that the
+	// enumeration always has to start with [case 0:] and
+	// that [default:] must return NULL!...
+
+	switch( i )
+	{
+	case 0:		return( new CSBMBL );
+	//case 1:		return( new CDunes );
+
+	default:	return( NULL );
+	}
+}
+
+
+///////////////////////////////////////////////////////////
+//														 //
 //														 //
 //														 //
 ///////////////////////////////////////////////////////////
 
 //---------------------------------------------------------
-#ifndef HEADER_INCLUDED__stream_power_model_H
-#define HEADER_INCLUDED__stream_power_model_H
+//{{AFX_SAGA
 
-//---------------------------------------------------------
-#include "MLB_Interface.h"
-#include "streampower.h"
+	MLB_INTERFACE
 
-class Cstream_power_model : public CSG_Module
-{
-public:
-	Cstream_power_model(void);
-	virtual ~Cstream_power_model(void);
-	virtual CSG_String	Get_MenuPath	(void)	{	return( _TL("Stream Power Model") );	}
-
-protected:
-
-	CSG_Parameters_Grid_Target		m_Grid_Target;
-	CSG_Grid *input, *u_grid_input, *k_grid_input, *output;
-	double u_scalar_input, k_scalar_input;
-	std::vector<std::vector<double>> GridToVector(CSG_Grid* grid);
-
-
-	void VectorToGrid(std::vector<std::vector<double>> arr, CSG_Grid* grid);
-	bool ExportGrid(CSG_Grid* grid, CSG_String path);
-
-	virtual int		On_Parameter_Changed	(CSG_Parameters *pParameters, CSG_Parameter *pParameter);
-	virtual int		On_Parameters_Enable	(CSG_Parameters *pParameters, CSG_Parameter *pParameter);
-	virtual bool	On_Execute	(void);
-};
-
-
-#endif // #ifndef HEADER_INCLUDED__stream_power_model_H
+//}}AFX_SAGA

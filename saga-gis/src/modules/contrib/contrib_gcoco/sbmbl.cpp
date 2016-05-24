@@ -1,17 +1,17 @@
-
-#include "SBMBL.h"
 #include <cstdlib>		/* Sorted Bedforms Be Heir */
 #include <cstdio>
 #include <cmath>		/* BTW, doubling Xmax and Ymax for periodic BC copy */
 #include <ctime>		/* is now very unnecessary. Remove later */
-#include <vector>
+#include "gdal_driver.h"
+#include "SBMBL.h"
+
 
 /* integration weights (gaussian) */
 const double gaussw[5] = {0.295524224714753, 0.269266719309996, 0.219086362515982, 0.149451349150581, 0.066671344308688};  
 const double gaussx[5] = {0.148874338981631, 0.433395394129247, 0.679409568299024, 0.865063366688985, 0.973906528517172}; 
 
 /* main looks at how many long you want to run, and then runs it */
-void CSBMBL::main()
+bool CSBMBL::main_loop()
 {
 	int p,z;
 	/*srand(500);
@@ -131,7 +131,10 @@ void CSBMBL::main()
 
 		while ( Process_Get_Okay(true) && (ForcingClock() < FORCING_DURATION) ) 
 		{	  
-			DoIteration();  
+			if (!DoIteration())
+			{
+				return false;
+			}
 			
 			z=area[Xmax/2][Ymax/2].activeZ;
 			
@@ -158,7 +161,7 @@ void CSBMBL::main()
 	
 	//printf("Total elapsed time = %f hrs\n", RunTimeClock() / 3600.);
 	//fclose(SaveForcing);
-	
+	return true;
 } /*  // main */
 
 double CSBMBL::Raise(double b, double e)
@@ -558,7 +561,7 @@ void CSBMBL::SedTransFine()
 	int x;
 	int y;
 	int z;
-	//int jint;
+	int jint;
 	double uMagnitude,vMagnitude;
 	double D;
 	double bedslopeX = -99.99;
@@ -1627,7 +1630,7 @@ void CSBMBL::DoIterationDummy()
 	
 }
 
-void CSBMBL::DoIteration()
+bool CSBMBL::DoIteration()
 /* controls iteration by looking at what direction the flow is
  and then calling the proper sediment transport function */
 {
@@ -1656,12 +1659,68 @@ void CSBMBL::DoIteration()
 		Process_Set_Text(CSG_String(buff));
 		// time remaining
 		double pcomp = GetPercentCompleted();
-		sprintf(buff, "Completed %.2f%%: Estimated completion: %d years %d days %d hours %d minutes %d seconds (%.1f FPS)",\
-			pcomp, trm.years, trm.days, trm.hours, trm.minutes, trm.seconds, fps);
-		Message_Add(CSG_String(buff));
 		Set_Progress(pcomp);
-	}
 
+		// save outputs
+		unsigned long lsec = (unsigned long) totalElapsedTime;
+		if (lsec == next_output_time)
+		{
+			sprintf(buff, "Completed %.2f%%: Estimated completion: %d years %d days %d hours %d minutes %d seconds (%.1f FPS)",\
+			pcomp, trm.years, trm.days, trm.hours, trm.minutes, trm.seconds, fps);
+			Message_Add(CSG_String(buff));
+
+			if (save_snapshots)
+			{
+				ofname = CSG_String::Format(SG_T("%s_%lu_seconds"), pGridHeight->Get_Name(), lsec);
+				outputPath = SG_File_Make_Path(outputDir, ofname, CSG_String("tif")); 
+				if(!ExportGrid(pGridHeight, outputPath))
+				{
+					return false;
+				}	
+
+				ofname = CSG_String::Format(SG_T("%s_%lu_seconds"), pGridCoarse->Get_Name(), lsec);
+				outputPath = SG_File_Make_Path(outputDir, ofname, CSG_String("tif")); 
+				if(!ExportGrid(pGridHeight, outputPath))
+				{
+					return false;
+				}	
+			}
+
+			next_output_time += output_freq * 3600;
+		}
+
+
+	}
+	return true;
+}
+
+bool CSBMBL::ExportGrid(CSG_Grid* grid, CSG_String path)
+{
+	Message_Add(CSG_String::Format(SG_T("%s: '%s' "), _TL("Saving"), path.c_str()));
+
+	
+	// GDAL related options
+	TSG_Data_Type type = grid->Get_Type();
+	CSG_String driver = CSG_String("GTiff");
+	CSG_String options = "";
+	CSG_Projection prj; 	Get_Projection(prj);
+	CSG_GDAL_DataSet dataset;
+	
+
+	if( !dataset.Open_Write(path, driver, options, type, 1, grid->Get_System(), prj) )
+	{
+		Error_Set(CSG_String::Format(SG_T("%s: '%s' "), _TL("Failed to open file for writing: "), path.c_str()));
+		return false;
+	}
+	dataset.Write(0, grid);
+	
+	if( !dataset.Close() )
+	{
+		Error_Set(CSG_String::Format(SG_T("%s: '%s' "), _TL("Failed to close file after writing: "), path.c_str()));
+		return false;
+	}
+	
+	return true;
 }
 
 double CSBMBL::GetPercentCompleted()
@@ -1777,18 +1836,19 @@ void CSBMBL::UpdateGrid()
 	{	
 		DataObject_Update(pGridHeight);
 		DataObject_Update(pGridCoarse);
+
 	}
 
 }
 
 CSBMBL::CSBMBL(void)
 {
-	Set_Name		(_TL("Sorted Bedform Model"));
+	Set_Name		(_TL("Sorted Bedforms Model"));
 
 	Set_Author		(SG_T("G.Coco, S.Masoud-Ansari"));
 
 	Set_Description	(_TW(
-		"Sorted Bedform Model"
+		"Sorted Bedforms Model"
 		));
 
 	CSG_Parameter	*pNode;
@@ -1842,7 +1902,7 @@ CSBMBL::CSBMBL(void)
 	Parameters.Add_Value(pNode, "dfine",
 		_TL("Diameter of fine sediment [m]"), _TL(""), PARAMETER_TYPE_Double, 0.00015);
 	Parameters.Add_Value(pNode, "dcoarse",
-		_TL("Diameter of fine sediment [m]"), _TL(""), PARAMETER_TYPE_Double, 0.001);
+		_TL("Diameter of coarse sediment [m]"), _TL(""), PARAMETER_TYPE_Double, 0.001);
 
 	// Time
 	pNode	= Parameters.Add_Node(NULL, "NODE_TIME", _TL("Time"), _TL(""));
@@ -1852,7 +1912,9 @@ CSBMBL::CSBMBL(void)
 		_TL("Forcing Duration [s]"), _TL("(s) Time between generating new wave heights and current velocities"),
 		PARAMETER_TYPE_Double, 86400.0);
 	Parameters.Add_Value(pNode, "maxRunTime",
-		_TL("N Forcing Durations"), _TL("Maximum run time measured in multiples of Forcing Duration"), PARAMETER_TYPE_Int, 100000.0);
+		_TL("N Forcing Durations"), _TL("Maximum run time measured in multiples of Forcing Duration"), PARAMETER_TYPE_Int, 10);
+	Parameters.Add_FilePath(pNode, "OUTPUT_DIR", _TL("Output Directory"), _TL("Directory used for saving regular GeoTIFF snaphots of the model as it progresses."), NULL, NULL, false, true, false); 
+	Parameters.Add_Value(NULL, "OUTPUT_FREQUENCY", _TL("Output Frequency [hrs]"), _TL("Frequency at which to save output in hours"), PARAMETER_TYPE_Int, 1, 0, true);
 
 }
 
@@ -1936,6 +1998,21 @@ bool CSBMBL::On_Execute(void)
 	timeStep = Parameters("timeStep")->asDouble();
 	maxRunTime =  Parameters("maxRunTime")->asInt();
 
+	// OUTPUTS
+
+	save_snapshots = true;
+	outputDir = Parameters("OUTPUT_DIR")->asFilePath()->asString();
+	if (outputDir.is_Empty())
+	{
+		save_snapshots = false;
+		if(!Message_Dlg_Confirm(CSG_String::Format(SG_T("No output directory specified, continue anyway?")), _TL("Warning")))
+		{
+			return false;
+		}
+	}
+	output_freq = Parameters("OUTPUT_FREQUENCY")->asInt();
+	next_output_time = 0;
+
 	// Perform checks
 	if (VELOCITY_MEAN < 3*VELOCITY_SIGMA) 
 	{
@@ -1994,6 +2071,32 @@ bool CSBMBL::On_Execute(void)
 	excessOutofIterCoarseY = std::vector<double>(Xmax);
 	localFluxOutofIterCoarseY = std::vector<double>(Xmax);
 
-	main();
-	return( true );
+
+	// save outputs
+	unsigned long lsec = (unsigned long) totalElapsedTime;
+	if (lsec == next_output_time)
+	{
+
+		if (save_snapshots)
+		{
+			ofname = CSG_String::Format(SG_T("%s_%lu_seconds"), pGridHeight->Get_Name(), lsec);
+			outputPath = SG_File_Make_Path(outputDir, ofname, CSG_String("tif")); 
+			if(!ExportGrid(pGridHeight, outputPath))
+			{
+				return false;
+			}	
+
+			ofname = CSG_String::Format(SG_T("%s_%lu_seconds"), pGridCoarse->Get_Name(), lsec);
+			outputPath = SG_File_Make_Path(outputDir, ofname, CSG_String("tif")); 
+			if(!ExportGrid(pGridHeight, outputPath))
+			{
+				return false;
+			}	
+		}
+
+		next_output_time += output_freq * 3600;
+	}
+
+	return main_loop();
+	
 }

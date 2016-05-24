@@ -72,6 +72,14 @@
 //---------------------------------------------------------
 Cdodthresholdproperror::Cdodthresholdproperror(void)
 {
+
+	#ifdef _WIN32
+		CSG_String UserHomeDir = CSG_String(getenv("USERPROFILE"));
+	#else
+		CSG_String UserHomeDir = CSG_String(getenv("HOME"));
+	#endif
+	CSG_String DefaultTempDir = SG_File_Make_Path(UserHomeDir, CSG_String("Saga_GIS_tmp"));
+
 	// Module info
 	Set_Name		(_TL("Propagated Error Threshold"));
 	Set_Author		(SG_T("Sina Masoud-Ansari"));
@@ -92,9 +100,8 @@ Cdodthresholdproperror::Cdodthresholdproperror(void)
 	Parameters.Add_Grid(NULL, "DOD_PROPERROR"	, _TL("Propagated Error"), _TL("Propagated error raster"), PARAMETER_INPUT);
 	Parameters.Add_Grid(NULL, "DOD_OUTPUT"	, _TL("Output"), _TL("Output raster"), PARAMETER_OUTPUT);
 
-	DoD_InputPath = SG_File_Make_Path(GCDBinDir, CSG_String("dodinput"), CSG_String("tif"));
-	DoD_PropErrorPath = SG_File_Make_Path(GCDBinDir, CSG_String("dodproperror"), CSG_String("tif"));
-	DoD_OutputPath = SG_File_Make_Path(GCDBinDir, CSG_String("dodoutput"), CSG_String("tif"));
+	//Other
+	Parameters.Add_FilePath(NULL, "TEMP_DIR", _TL("Temp File Directory"), _TL("Directory used for storing temporary files during processing."), NULL, DefaultTempDir, false, true, false); 
 
 	//GDAL
 	GDALDriver = CSG_String("GTiff");
@@ -117,6 +124,11 @@ bool Cdodthresholdproperror::On_Execute(void)
 	{
 		return false;
 	}
+	CSG_String TempDirPath = Parameters("TEMP_DIR")->asFilePath()->asString();
+	
+	DoD_InputPath = SG_File_Make_Path(TempDirPath, CSG_String("dodinput"), CSG_String("tif"));
+	DoD_PropErrorPath = SG_File_Make_Path(TempDirPath, CSG_String("dodproperror"), CSG_String("tif"));
+	DoD_OutputPath = SG_File_Make_Path(TempDirPath, CSG_String("dodoutput"), CSG_String("tif"));
 
 	// convert grids to tiffs for command input
 	CSG_Grid* InputGrids [2] = {DoD_Input, DoD_PropError};

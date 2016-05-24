@@ -72,6 +72,14 @@
 //---------------------------------------------------------
 Cdodminlod::Cdodminlod(void)
 {
+
+	#ifdef _WIN32
+		CSG_String UserHomeDir = CSG_String(getenv("USERPROFILE"));
+	#else
+		CSG_String UserHomeDir = CSG_String(getenv("HOME"));
+	#endif
+	CSG_String DefaultTempDir = SG_File_Make_Path(UserHomeDir, CSG_String("Saga_GIS_tmp"));
+
 	// Module info
 	Set_Name		(_TL("Minimum Level of Detection DoD"));
 	Set_Author		(SG_T("Sina Masoud-Ansari"));
@@ -94,10 +102,8 @@ Cdodminlod::Cdodminlod(void)
 	Parameters.Add_Grid(NULL, "THRESHOLDED_DOD", _TL("Thresholded DoD"), _TL("Thresholded DEM of difference"), PARAMETER_OUTPUT);
 	Parameters.Add_Value(NULL, "MINLOD", _TL("Minimum Level of Detection"), _TL("Minimum level of detection for thresholding"), PARAMETER_TYPE_Double, 0, 0, true);
 
-	NewDEM_InputPath = SG_File_Make_Path(GCDBinDir, CSG_String("newdem"), CSG_String("tif"));
-	OldDEM_InputPath = SG_File_Make_Path(GCDBinDir, CSG_String("olddem"), CSG_String("tif"));
-	RawDoD_OutputPath = SG_File_Make_Path(GCDBinDir, CSG_String("rawdodoutput"), CSG_String("tif"));
-	ThresholdedDoD_OutputPath = SG_File_Make_Path(GCDBinDir, CSG_String("threshdodoutput"), CSG_String("tif"));
+	//Other
+	Parameters.Add_FilePath(NULL, "TEMP_DIR", _TL("Temp File Directory"), _TL("Directory used for storing temporary files during processing."), NULL, DefaultTempDir, false, true, false); 
 
 	//GDAL
 	GDALDriver = CSG_String("GTiff");
@@ -120,6 +126,13 @@ bool Cdodminlod::On_Execute(void)
 	{
 		return false;
 	}
+	CSG_String TempDirPath = Parameters("TEMP_DIR")->asFilePath()->asString();
+
+	NewDEM_InputPath = SG_File_Make_Path(TempDirPath, CSG_String("newdem"), CSG_String("tif"));
+	OldDEM_InputPath = SG_File_Make_Path(TempDirPath, CSG_String("olddem"), CSG_String("tif"));
+	RawDoD_OutputPath = SG_File_Make_Path(TempDirPath, CSG_String("rawdodoutput"), CSG_String("tif"));
+	ThresholdedDoD_OutputPath = SG_File_Make_Path(TempDirPath, CSG_String("threshdodoutput"), CSG_String("tif"));
+
 
 	// convert grids to tiffs for command input
 	CSG_Grid* InputGrids [2] = {NewDEM, OldDEM};

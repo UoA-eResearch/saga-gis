@@ -84,7 +84,7 @@ CSG_String Get_Info(int i)
 		return( _TL("Collection of tools for teaching environmental process modelling") );
 
 	case MLB_INFO_Version:
-		return( SG_T("0.1") );
+		return( SG_T("1.0") );
 
 	case MLB_INFO_Menu_Path:
 		return( _TL("University of Auckland|Examples") );
@@ -112,7 +112,6 @@ CSG_Module *		Create_Module(int i)
 	switch( i )
 	{
 	case 0:		return( new Cstream_power_model );
-	case 1:		return( new CSBMBL );
 	default:	return( NULL );
 	}
 }

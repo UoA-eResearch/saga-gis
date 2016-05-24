@@ -201,6 +201,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "contrib_rjm", "modules\cont
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "contrib_gcd", "modules\contrib\contrib_gcd\contrib_gcd.vcxproj", "{992B02BB-F92A-4A95-935F-869551517102}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "contrib_gcoco", "modules\contrib\contrib_gcoco\contrib_gcoco.vcxproj", "{AA2742C0-166B-4F75-AD6E-BE47B5A09B7F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -849,6 +851,14 @@ Global
 		{992B02BB-F92A-4A95-935F-869551517102}.Release|Win32.Build.0 = Release|Win32
 		{992B02BB-F92A-4A95-935F-869551517102}.Release|x64.ActiveCfg = Release|x64
 		{992B02BB-F92A-4A95-935F-869551517102}.Release|x64.Build.0 = Release|x64
+		{AA2742C0-166B-4F75-AD6E-BE47B5A09B7F}.Debug|Win32.ActiveCfg = Debug|Win32
+		{AA2742C0-166B-4F75-AD6E-BE47B5A09B7F}.Debug|Win32.Build.0 = Debug|Win32
+		{AA2742C0-166B-4F75-AD6E-BE47B5A09B7F}.Debug|x64.ActiveCfg = Debug|x64
+		{AA2742C0-166B-4F75-AD6E-BE47B5A09B7F}.Debug|x64.Build.0 = Debug|x64
+		{AA2742C0-166B-4F75-AD6E-BE47B5A09B7F}.Release|Win32.ActiveCfg = Release|Win32
+		{AA2742C0-166B-4F75-AD6E-BE47B5A09B7F}.Release|Win32.Build.0 = Release|Win32
+		{AA2742C0-166B-4F75-AD6E-BE47B5A09B7F}.Release|x64.ActiveCfg = Release|x64
+		{AA2742C0-166B-4F75-AD6E-BE47B5A09B7F}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
