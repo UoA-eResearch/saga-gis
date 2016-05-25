@@ -290,7 +290,7 @@ bool CWait::GetParameterValues()
 		Message_Dlg(_TL("A job list filename is required."));
 		return false;			
 	}
-	
+
 	// waiting
 	PollingInterval = Parameters("POLLING_INTERVAL")->asInt();
 	CleanJob = Parameters("CLEAN")->asBool();
