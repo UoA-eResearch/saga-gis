@@ -70,12 +70,9 @@ CDropAnalysis::CDropAnalysis(void)
 
 	// VALUES
 	CSG_Parameter *pNode	= Parameters.Add_Node(NULL, "THRESHOLD_OPTIONS", _TL("Threshold Options"), _TL("Options for tuning optimal threshold search"));
-	Parameters.Add_Value(pNode, "MIN"	, _TL("Minimum"),
-		_TL("This parameter is the lowest end of the range searched for possible threshold values using drop analysis. This technique looks for the smallest threshold in the range where the absolute value of the t-statistic is less than 2. For the science behind the drop analysis see Tarboton et al. (1991, 1992), Tarboton and Ames (2001)."), PARAMETER_TYPE_Double, 5.0);
-	Parameters.Add_Value(pNode, "MAX"	, _TL("This parameter is the highest end of the range searched for possible threshold values using drop analysis. This technique looks for the smallest threshold in the range where the absolute value of the t-statistic is less than 2. For the science behind the drop analysis see Tarboton et al. (1991, 1992), Tarboton and Ames (2001)."),
-		_TL("Upper bound of range used to search for optimum threshold"), PARAMETER_TYPE_Double, 500.0);
-	Parameters.Add_Value(pNode, "NTHRESH"	, _TL("The parameter is the number of steps to divide the search range into when looking for possible threshold values using drop analysis. This technique looks for the smallest threshold in the range where the absolute value of the t-statistic is less than 2. For the science behind the drop analysis see Tarboton et al. (1991, 1992), Tarboton and Ames (2001)."),
-		_TL("Number of thresholds used to search for optimum threshold"), PARAMETER_TYPE_Int, 10);
+	Parameters.Add_Value(pNode, "MIN"	, _TL("Minimum"), _TL("This parameter is the lowest end of the range searched for possible threshold values using drop analysis. "), PARAMETER_TYPE_Double, 5.0);
+	Parameters.Add_Value(pNode, "MAX"	, _TL("Maximum"), _TL("This parameter is the highest end of the range searched for possible threshold values using drop analysis."), PARAMETER_TYPE_Double, 500.0);
+	Parameters.Add_Value(pNode, "NTHRESH", _TL("Steps"), _TL("Number of thresholds used to search for optimum threshold"), PARAMETER_TYPE_Int, 10);
 
 
 	// CHOICES

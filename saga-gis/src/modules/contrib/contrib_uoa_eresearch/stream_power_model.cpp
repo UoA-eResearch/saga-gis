@@ -256,18 +256,19 @@ bool Cstream_power_model::On_Execute(void)
 	}
 	
 
-	Process_Set_Text(CSG_String::Format(SG_T("%lu years"), lyrs));
+	Process_Set_Text(CSG_String::Format(SG_T("%f years"), 0));
 	unsigned long next_output_time = output_freq;
-	while (Process_Get_Okay(true) && sp.time < sp.duration)
+	while (Process_Get_Okay(true) && sp.time <= sp.duration)
 	{
 		sp.Step();
-		lyrs = (unsigned long)(sp.time * 1000);
-		Process_Set_Text(CSG_String::Format(SG_T("%lu years"), lyrs));
+
+		Process_Set_Text(CSG_String::Format(SG_T("%.2f years"), sp.time * 1000));
 		Set_Progress( (sp.time / sp.duration) * 100 );
 		VectorToGrid(sp.GetTopo(), output);
 		DataObject_Update(output, true);
 
 		// save state
+		lyrs = (unsigned long)(sp.time * 1000);
 		if (lyrs == next_output_time)
 		{
 			ofname = CSG_String::Format(SG_T("%s_%lu_years"), output->Get_Name(), lyrs);

@@ -1650,20 +1650,22 @@ bool CSBMBL::DoIteration()
 		double sec = tdiff/(double)CLOCKS_PER_SEC;
 		double fps = 1.0 / sec;
 		timeStruct trm = TimeToCompletion(fps);
-		timeStruct tc = ConvertTime((int)totalElapsedTime); // convert seconds into years, days etc
+		int totalSeconds = (int)totalElapsedTime;
+		timeStruct tc = ConvertTime(totalSeconds); // convert seconds into years, days etc
 		char buff[1024];
+
 		// simulation time
 		sprintf(buff, "Elapsed Time: %d s : %d years %d days %d hours %d minutes %d seconds",\
-			(int)totalElapsedTime, tc.years, tc.days, tc.hours, tc.minutes, tc.seconds);
-		//Message_Add(CSG_String(buff));
+			totalSeconds, tc.years, tc.days, tc.hours, tc.minutes, tc.seconds);
 		Process_Set_Text(CSG_String(buff));
+
 		// time remaining
 		double pcomp = GetPercentCompleted();
 		Set_Progress(pcomp);
 
 		// save outputs
-		unsigned long lsec = (unsigned long) totalElapsedTime;
-		if (lsec == next_output_time)
+		int totalHours = totalSeconds / 3600;
+		if ( totalHours == next_output_time)
 		{
 			sprintf(buff, "Completed %.2f%%: Estimated completion: %d years %d days %d hours %d minutes %d seconds (%.1f FPS)",\
 			pcomp, trm.years, trm.days, trm.hours, trm.minutes, trm.seconds, fps);
@@ -1671,22 +1673,22 @@ bool CSBMBL::DoIteration()
 
 			if (save_snapshots)
 			{
-				ofname = CSG_String::Format(SG_T("%s_%lu_seconds"), pGridHeight->Get_Name(), lsec);
+				ofname = CSG_String::Format(SG_T("%s_%d_hours"), pGridHeight->Get_Name(), totalHours);
 				outputPath = SG_File_Make_Path(outputDir, ofname, CSG_String("tif")); 
 				if(!ExportGrid(pGridHeight, outputPath))
 				{
 					return false;
 				}	
 
-				ofname = CSG_String::Format(SG_T("%s_%lu_seconds"), pGridCoarse->Get_Name(), lsec);
+				ofname = CSG_String::Format(SG_T("%s_%d_hours"), pGridCoarse->Get_Name(), totalHours);
 				outputPath = SG_File_Make_Path(outputDir, ofname, CSG_String("tif")); 
-				if(!ExportGrid(pGridHeight, outputPath))
+				if(!ExportGrid(pGridCoarse, outputPath))
 				{
 					return false;
 				}	
 			}
 
-			next_output_time += output_freq * 3600;
+			next_output_time += output_freq;
 		}
 
 
@@ -2073,29 +2075,25 @@ bool CSBMBL::On_Execute(void)
 
 
 	// save outputs
-	unsigned long lsec = (unsigned long) totalElapsedTime;
-	if (lsec == next_output_time)
+	if (save_snapshots)
 	{
-
-		if (save_snapshots)
+		ofname = CSG_String::Format(SG_T("%s_%d_hours"), pGridHeight->Get_Name(), 0);
+		outputPath = SG_File_Make_Path(outputDir, ofname, CSG_String("tif")); 
+		if(!ExportGrid(pGridHeight, outputPath))
 		{
-			ofname = CSG_String::Format(SG_T("%s_%lu_seconds"), pGridHeight->Get_Name(), lsec);
-			outputPath = SG_File_Make_Path(outputDir, ofname, CSG_String("tif")); 
-			if(!ExportGrid(pGridHeight, outputPath))
-			{
-				return false;
-			}	
+			return false;
+		}	
 
-			ofname = CSG_String::Format(SG_T("%s_%lu_seconds"), pGridCoarse->Get_Name(), lsec);
-			outputPath = SG_File_Make_Path(outputDir, ofname, CSG_String("tif")); 
-			if(!ExportGrid(pGridHeight, outputPath))
-			{
-				return false;
-			}	
-		}
-
-		next_output_time += output_freq * 3600;
+		ofname = CSG_String::Format(SG_T("%s_%d_hours"), pGridCoarse->Get_Name(), 0);
+		outputPath = SG_File_Make_Path(outputDir, ofname, CSG_String("tif")); 
+		if(!ExportGrid(pGridCoarse, outputPath))
+		{
+			return false;
+		}	
 	}
+
+	next_output_time += output_freq;
+	
 
 	return main_loop();
 	

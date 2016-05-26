@@ -22,6 +22,8 @@ CSubmit::CSubmit(void)
 		UserHomeDir = CSG_String(getenv("HOME"));
 	#endif
 
+	CSG_String DefaultTempDir = SG_File_Make_Path(UserHomeDir, CSG_String("Saga_GIS_tmp"));
+
 	CSG_Parameter	*pNodeFiles;
 	CSG_Parameter	*pNodeWalltime;
 	CSG_Parameter	*pNodeLogging;
@@ -37,11 +39,12 @@ CSubmit::CSubmit(void)
 	RJMConfigFilePath = SG_File_Make_Path(RJMConfigDirPath, RJMConfigFilename, CSG_String("ini"));
 
 	RJMBinDir = SG_File_Make_Path(CSG_String("bin"), CSG_String("rjm"));
+	RJMTempDir = SG_File_Make_Path(UserHomeDir, CSG_String("Saga_GIS_tmp"));
 
-	RJMJobList = SG_File_Make_Path(UserHomeDir, CSG_String("joblist"), CSG_String("txt"));
+	RJMJobList = SG_File_Make_Path(RJMTempDir, CSG_String("joblist"), CSG_String("txt"));
 	RJMJobList = SG_File_Get_Path_Absolute(RJMJobList);
 
-	RJMLogFilePath = SG_File_Make_Path(UserHomeDir, CSG_String("rjmlog"), CSG_String("txt"));
+	RJMLogFilePath = SG_File_Make_Path(RJMTempDir, CSG_String("rjmlog"), CSG_String("txt"));
 	RJMLogFilePath = SG_File_Get_Path_Absolute(RJMLogFilePath);
 
 	RJMConfigure = SG_File_Make_Path(RJMBinDir, CSG_String("rjm_configure"), CSG_String("exe"));
@@ -75,6 +78,8 @@ CSubmit::CSubmit(void)
 	Parameters.Add_Value(NULL, "WAIT", _TL("Wait for job completion?"),_TL("Note it is fine to and run the Wait tool instead."), PARAMETER_TYPE_Bool, true);
 	Parameters.Add_Value(NULL, "POLLING_INTERVAL", _TL("Check Interval"), _TL("Seconds to wait before checking for job completion."), PARAMETER_TYPE_Int, 60, 10, true);
 	Parameters.Add_Value(NULL, "CLEAN", _TL("Clean up on completion?"),_TL("Deletes job files on remote system after they have been downloaded"), PARAMETER_TYPE_Bool, true);
+	Parameters.Add_FilePath(NULL, "TEMP_DIR", _TL("Temp File Directory"), _TL("Directory used for storing temporary files during processing."), NULL, DefaultTempDir, false, true, false); 
+	
 
 	// walltime
 	pNodeWalltime = Parameters.Add_Node(NULL, "WALLTIME", _TL("Walltime"), _TL("The time allowed for job completion"));
@@ -138,6 +143,16 @@ CSubmit::~CSubmit(void){}
 
 bool CSubmit::On_Execute(void)
 {
+
+	// make sure temp dir exists
+	if (!SG_Dir_Exists(RJMTempDir))
+	{
+		if (!SG_Dir_Create(RJMTempDir))
+		{
+			Error_Set(CSG_String::Format(SG_T("%s: '%s' "), _TL("Failed to create temp directory"), RJMTempDir.c_str()));
+		}
+	}
+
 	if (ConfigExists())
 	{
 		ReadConfig();
@@ -443,6 +458,18 @@ bool CSubmit::GetParameterValues()
 		JobDir = SG_File_Get_Path_Absolute(JobDir);
 	}
 
+	// temp dir
+	RJMTempDir = Parameters("TEMP_DIR")->asFilePath()->asString();
+	if (RJMTempDir.is_Empty())
+	{
+		Message_Dlg(_TL("A temp directory is required."));
+		return false;			
+	}
+	else
+	{
+		RJMTempDir = SG_File_Get_Path_Absolute(RJMTempDir);
+	}
+
 	// files to upload and download
 	Parameters("UPLOADS")->asFilePath()->Get_FilePaths(FilesToUpload);
 	Parameters("DOWNLOADS")->asFilePath()->Get_FilePaths(FilesToDownload);
@@ -602,10 +629,10 @@ CSG_String CSubmit::GetModules()
 {
 	CSG_String modules("None|Refresh|");
 
-	CSG_String OutFile = SG_File_Make_Path(RJMBinDir, CSG_String("out"), CSG_String("txt"));
+	CSG_String OutFile = SG_File_Make_Path(RJMTempDir, CSG_String("out"), CSG_String("txt"));
 	OutFile = SG_File_Get_Path_Absolute(OutFile);
 
-	CSG_String ErrorFile = SG_File_Make_Path(RJMBinDir, CSG_String("error"), CSG_String("txt"));
+	CSG_String ErrorFile = SG_File_Make_Path(RJMTempDir, CSG_String("error"), CSG_String("txt"));
 	ErrorFile = SG_File_Get_Path_Absolute(ErrorFile);
 
 	CSG_String cmd = CSG_String::Format(SG_T("%s module avail >%s 2>%s"), RJMRunRemote.c_str(), OutFile.c_str(), ErrorFile.c_str());
