@@ -100,7 +100,7 @@ Cdodminlod::Cdodminlod(void)
 	Parameters.Add_Grid(NULL, "OLD_DEM"	, _TL("Old DEM"), _TL("Old DEM raster"), PARAMETER_INPUT);
 	Parameters.Add_Grid(NULL, "RAW_DOD", _TL("Raw DoD"), _TL("Raw DEM of difference"), PARAMETER_OUTPUT);
 	Parameters.Add_Grid(NULL, "THRESHOLDED_DOD", _TL("Thresholded DoD"), _TL("Thresholded DEM of difference"), PARAMETER_OUTPUT);
-	Parameters.Add_Value(NULL, "MINLOD", _TL("Minimum Level of Detection"), _TL("Minimum level of detection for thresholding"), PARAMETER_TYPE_Double, 0, 0, true);
+	Parameters.Add_Value(NULL, "MINLOD", _TL("Minimum Level of Detection [m]"), _TL("Minimum level of detection for thresholding in meters"), PARAMETER_TYPE_Double, 0, 0, true);
 
 	//Other
 	Parameters.Add_FilePath(NULL, "TEMP_DIR", _TL("Temp File Directory"), _TL("Directory used for storing temporary files during processing."), NULL, DefaultTempDir, false, true, false); 
