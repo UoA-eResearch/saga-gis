@@ -1650,12 +1650,13 @@ bool CSBMBL::DoIteration()
 		double sec = tdiff/(double)CLOCKS_PER_SEC;
 		double fps = 1.0 / sec;
 		timeStruct trm = TimeToCompletion(fps);
-		timeStruct tc = ConvertTime((int)totalElapsedTime); // convert seconds into years, days etc
+		int totalSeconds = (int)totalElapsedTime;
+		timeStruct tc = ConvertTime(totalSeconds); // convert seconds into years, days etc
 		char buff[1024];
 
 		// simulation time
 		sprintf(buff, "Elapsed Time: %d s : %d years %d days %d hours %d minutes %d seconds",\
-			(int)totalElapsedTime, tc.years, tc.days, tc.hours, tc.minutes, tc.seconds);
+			totalSeconds, tc.years, tc.days, tc.hours, tc.minutes, tc.seconds);
 		Process_Set_Text(CSG_String(buff));
 
 		// time remaining
@@ -1663,7 +1664,8 @@ bool CSBMBL::DoIteration()
 		Set_Progress(pcomp);
 
 		// save outputs
-		if (tc.hours == next_output_time)
+		int totalHours = totalSeconds / 3600;
+		if ( totalHours == next_output_time)
 		{
 			sprintf(buff, "Completed %.2f%%: Estimated completion: %d years %d days %d hours %d minutes %d seconds (%.1f FPS)",\
 			pcomp, trm.years, trm.days, trm.hours, trm.minutes, trm.seconds, fps);
@@ -1671,14 +1673,14 @@ bool CSBMBL::DoIteration()
 
 			if (save_snapshots)
 			{
-				ofname = CSG_String::Format(SG_T("%s_%d_hours"), pGridHeight->Get_Name(), tc.hours);
+				ofname = CSG_String::Format(SG_T("%s_%d_hours"), pGridHeight->Get_Name(), totalHours);
 				outputPath = SG_File_Make_Path(outputDir, ofname, CSG_String("tif")); 
 				if(!ExportGrid(pGridHeight, outputPath))
 				{
 					return false;
 				}	
 
-				ofname = CSG_String::Format(SG_T("%s_%d_hours"), pGridCoarse->Get_Name(), tc.hours);
+				ofname = CSG_String::Format(SG_T("%s_%d_hours"), pGridCoarse->Get_Name(), totalHours);
 				outputPath = SG_File_Make_Path(outputDir, ofname, CSG_String("tif")); 
 				if(!ExportGrid(pGridCoarse, outputPath))
 				{
