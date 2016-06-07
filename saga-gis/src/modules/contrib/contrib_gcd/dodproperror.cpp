@@ -90,10 +90,6 @@ Cdodproperror::Cdodproperror(void)
 	GCD = SG_File_Make_Path(GCDBinDir, CSG_String("gcd"), CSG_String("exe"));
 	GCD_CMD = CSG_String("dodproperror");
 
-	// Logging
-	LogOutput = SG_File_Make_Path(GCDBinDir, CSG_String("out"), CSG_String("txt"));
-	LogError = SG_File_Make_Path(GCDBinDir, CSG_String("error"), CSG_String("txt"));;
-
 	// Grids
 	Parameters.Add_Grid(NULL, "NEW_DEM"	, _TL("New DEM"), _TL("New DEM raster"), PARAMETER_INPUT);
 	Parameters.Add_Grid(NULL, "OLD_DEM"	, _TL("Old DEM"), _TL("Old DEM raster"), PARAMETER_INPUT);
@@ -126,6 +122,9 @@ bool Cdodproperror::On_Execute(void)
 		return false;
 	}
 	CSG_String TempDirPath = Parameters("TEMP_DIR")->asFilePath()->asString();
+
+	LogOutput = SG_File_Make_Path(TempDirPath, CSG_String("out"), CSG_String("txt"));
+	LogError = SG_File_Make_Path(TempDirPath, CSG_String("error"), CSG_String("txt"));;
 
 	NewDEM_InputPath = SG_File_Make_Path(TempDirPath, CSG_String("newdem"), CSG_String("tif"));
 	OldDEM_InputPath = SG_File_Make_Path(TempDirPath, CSG_String("olddem"), CSG_String("tif"));
@@ -161,7 +160,7 @@ bool Cdodproperror::On_Execute(void)
 		return false;
 	}
 
-	CSG_String CMD = CSG_String::Format(SG_T("%s %s %s %s %s %s %s >%s 2>%s"), GCD.c_str(), GCD_CMD.c_str(), NewDEM_InputPath.c_str(), OldDEM_InputPath.c_str(), PropError_InputPath.c_str(), RawDoD_OutputPath.c_str(), ThresholdedDoD_OutputPath.c_str(), LogOutput.c_str(), LogError.c_str());
+	CSG_String CMD = CSG_String::Format(SG_T("\"\"%s\" %s \"%s\" \"%s\" \"%s\" \"%s\" \"%s\" >\"%s\" 2>\"%s\"\""), GCD.c_str(), GCD_CMD.c_str(), NewDEM_InputPath.c_str(), OldDEM_InputPath.c_str(), PropError_InputPath.c_str(), RawDoD_OutputPath.c_str(), ThresholdedDoD_OutputPath.c_str(), LogOutput.c_str(), LogError.c_str());
 	Message_Add(CSG_String("Executing: ") + CMD);			
 	if (system(CMD.b_str()) != 0)
 	{

@@ -91,10 +91,6 @@ Cproperror::Cproperror(void)
 	GCD = SG_File_Make_Path(GCDBinDir, CSG_String("gcd"), CSG_String("exe"));
 	GCD_CMD = CSG_String("properror");
 
-	// Logging
-	LogOutput = SG_File_Make_Path(GCDBinDir, CSG_String("out"), CSG_String("txt"));
-	LogError = SG_File_Make_Path(GCDBinDir, CSG_String("error"), CSG_String("txt"));;
-
 	// Grids
 	Parameters.Add_Grid(NULL, "ERRORA"	, _TL("Error A"), _TL("First error raster"), PARAMETER_INPUT);
 	Parameters.Add_Grid(NULL, "ERRORB"	, _TL("Error B"), _TL("Second error raster"), PARAMETER_INPUT);
@@ -128,6 +124,9 @@ bool Cproperror::On_Execute(void)
 	}
 	CSG_String TempDirPath = Parameters("TEMP_DIR")->asFilePath()->asString();
 
+	LogOutput = SG_File_Make_Path(TempDirPath, CSG_String("out"), CSG_String("txt"));
+	LogError = SG_File_Make_Path(TempDirPath, CSG_String("error"), CSG_String("txt"));;
+
 	ErrorA_InputPath = SG_File_Make_Path(TempDirPath, CSG_String("errora"), CSG_String("tif"));
 	ErrorB_InputPath = SG_File_Make_Path(TempDirPath, CSG_String("errorb"), CSG_String("tif"));
 	PropError_OutputPath = SG_File_Make_Path(TempDirPath, CSG_String("properror"), CSG_String("tif"));
@@ -156,7 +155,7 @@ bool Cproperror::On_Execute(void)
 		return false;
 	}
 
-	CSG_String CMD = CSG_String::Format(SG_T("%s %s %s %s %s >%s 2>%s"), GCD.c_str(), GCD_CMD.c_str(), ErrorA_InputPath.c_str(), ErrorB_InputPath.c_str(), PropError_OutputPath.c_str(), LogOutput.c_str(), LogError.c_str());
+	CSG_String CMD = CSG_String::Format(SG_T("\"\"%s\" %s \"%s\" \"%s\" \"%s\" >\"%s\" 2>\"%s\"\""), GCD.c_str(), GCD_CMD.c_str(), ErrorA_InputPath.c_str(), ErrorB_InputPath.c_str(), PropError_OutputPath.c_str(), LogOutput.c_str(), LogError.c_str());
 	Message_Add(CSG_String("Executing: ") + CMD);			
 	if (system(CMD.b_str()) != 0)
 	{

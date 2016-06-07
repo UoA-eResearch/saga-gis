@@ -91,10 +91,6 @@ Cuniformerror::Cuniformerror(void)
 	GCD = SG_File_Make_Path(GCDBinDir, CSG_String("gcd"), CSG_String("exe"));
 	GCD_CMD = CSG_String("uniformerror");
 
-	// Logging
-	LogOutput = SG_File_Make_Path(GCDBinDir, CSG_String("out"), CSG_String("txt"));
-	LogError = SG_File_Make_Path(GCDBinDir, CSG_String("error"), CSG_String("txt"));;
-
 	// Grids
 	Parameters.Add_Grid(NULL, "REFERENCE"	, _TL("Reference"), _TL("Raster to be used as coordinate system and NoData reference."), PARAMETER_INPUT);
 	Parameters.Add_Grid(NULL, "UNIFORM_ERROR", _TL("Uniform Error"), _TL("Output uniform error raster"), PARAMETER_OUTPUT);
@@ -126,6 +122,9 @@ bool Cuniformerror::On_Execute(void)
 	}
 	CSG_String TempDirPath = Parameters("TEMP_DIR")->asFilePath()->asString();
 
+	LogOutput = SG_File_Make_Path(TempDirPath, CSG_String("out"), CSG_String("txt"));
+	LogError = SG_File_Make_Path(TempDirPath, CSG_String("error"), CSG_String("txt"));;
+
 	Reference_InputPath = SG_File_Make_Path(TempDirPath, CSG_String("reference"), CSG_String("tif"));
 	UniformError_OutputPath = SG_File_Make_Path(TempDirPath, CSG_String("uniformerror"), CSG_String("tif"));
 
@@ -152,7 +151,7 @@ bool Cuniformerror::On_Execute(void)
 		return false;
 	}
 
-	CSG_String CMD = CSG_String::Format(SG_T("%s %s %s %s %f >%s 2>%s"), GCD.c_str(), GCD_CMD.c_str(), Reference_InputPath.c_str(), UniformError_OutputPath.c_str(), UniformErrorValue, LogOutput.c_str(), LogError.c_str());
+	CSG_String CMD = CSG_String::Format(SG_T("\"\"%s\" %s \"%s\" \"%s\" %f >\"%s\" 2>\"%s\"\""), GCD.c_str(), GCD_CMD.c_str(), Reference_InputPath.c_str(), UniformError_OutputPath.c_str(), UniformErrorValue, LogOutput.c_str(), LogError.c_str());
 	Message_Add(CSG_String("Executing: ") + CMD);			
 	if (system(CMD.b_str()) != 0)
 	{
