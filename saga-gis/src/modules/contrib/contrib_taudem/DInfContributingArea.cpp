@@ -131,11 +131,11 @@ bool CDInfContributingArea::On_Execute(void)
 	CSG_String OptionalFlags = CSG_String("");
 	if (OUTLET_INPUT_Shapes != NULL)
 	{
-		OptionalFlags = CSG_String::Format(SG_T(" -o %s"), OUTLET_INPUT_FilePath.c_str());
+		OptionalFlags = CSG_String::Format(SG_T(" -o \"%s\""), OUTLET_INPUT_FilePath.c_str());
 	}
 	if (WEIGHTGRID_INPUT_Grid != NULL)
 	{
-		OptionalFlags = OptionalFlags + CSG_String::Format(SG_T(" -wg %s"), WEIGHTGRID_INPUT_FilePath.c_str());
+		OptionalFlags = OptionalFlags + CSG_String::Format(SG_T(" -wg \"%s\""), WEIGHTGRID_INPUT_FilePath.c_str());
 	}
 	if( !Parameters("NC")->asBool() ){
 		OptionalFlags = OptionalFlags + CSG_String(" -nc");
@@ -143,7 +143,7 @@ bool CDInfContributingArea::On_Execute(void)
 
 	BinaryName = CSG_String("AreaDinf"); // DInf
 	BinaryPath = SG_File_Make_Path(TauDEMBinDir, BinaryName);
-	sCmd = CSG_String::Format(SG_T("mpiexec -n %d %s -ang %s -sca %s %s > %s 2>&1"), nproc, BinaryPath.c_str(), FLOWDINF_INPUT_FilePath.c_str(), AREADINF_OUTPUT_FilePath.c_str(), OptionalFlags.c_str(), LogFile.c_str());
+	sCmd = CSG_String::Format(SG_T("\"mpiexec -n %d \"%s\" -ang \"%s\" -sca \"%s\" %s > \"%s\" 2>&1\""), nproc, BinaryPath.c_str(), FLOWDINF_INPUT_FilePath.c_str(), AREADINF_OUTPUT_FilePath.c_str(), OptionalFlags.c_str(), LogFile.c_str());
 	AreaName = CSG_String("D-Infinity Specific Catchment Area");
 
 	// make sure temp dir exists

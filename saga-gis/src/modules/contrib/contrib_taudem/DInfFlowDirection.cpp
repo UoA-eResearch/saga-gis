@@ -113,7 +113,7 @@ bool CDInfFlowDirection::On_Execute(void)
 
 	BinaryName = CSG_String("DinfFlowDir"); // DInf
 	BinaryPath = SG_File_Make_Path(TauDEMBinDir, BinaryName);
-	sCmd = CSG_String::Format(SG_T("mpiexec -n %d %s -ang %s -slp %s -fel %s > %s 2>&1"), nproc, BinaryPath.c_str(), FLOW_OUTPUT_FilePath.c_str(), SLOPE_OUTPUT_FilePath.c_str(), FEL_INPUT_FilePath.c_str(), LogFile.c_str());
+	sCmd = CSG_String::Format(SG_T("\"mpiexec -n %d \"%s\" -ang \"%s\" -slp \"%s\" -fel \"%s\" > \"%s\" 2>&1\""), nproc, BinaryPath.c_str(), FLOW_OUTPUT_FilePath.c_str(), SLOPE_OUTPUT_FilePath.c_str(), FEL_INPUT_FilePath.c_str(), LogFile.c_str());
 	FlowName = CSG_String("D-Infinity Flow Direction");
 	SlopeName = CSG_String("D-Infinity Slope");
 

@@ -166,7 +166,7 @@ bool CDropAnalysis::On_Execute(void)
 	// exec commnad
 	BinaryName = CSG_String("DropAnalysis"); // D8
 	BinaryPath = SG_File_Make_Path(TauDEMBinDir, BinaryName);
-	sCmd = CSG_String::Format(SG_T("mpiexec -n %d %s -ad8 %s -p %s -fel %s -ssa %s -o %s -drp %s -par %f %f %d %d > %s 2>&1"), nproc, BinaryPath.c_str(), AREAD8_INPUT_FilePath.c_str(), FLOWD8_INPUT_FilePath.c_str(), FEL_INPUT_FilePath.c_str(), SSA_INPUT_FilePath.c_str(), OUTLET_INPUT_FilePath.c_str(), DROPTABLE_OUTPUT_FilePath.c_str(), min, max, nthresh, steptype, LogFile.c_str());
+	sCmd = CSG_String::Format(SG_T("\"mpiexec -n %d \"%s\" -ad8 \"%s\" -p \"%s\" -fel \"%s\" -ssa \"%s\" -o \"%s\" -drp \"%s\" -par %f %f %d %d > \"%s\" 2>&1\""), nproc, BinaryPath.c_str(), AREAD8_INPUT_FilePath.c_str(), FLOWD8_INPUT_FilePath.c_str(), FEL_INPUT_FilePath.c_str(), SSA_INPUT_FilePath.c_str(), OUTLET_INPUT_FilePath.c_str(), DROPTABLE_OUTPUT_FilePath.c_str(), min, max, nthresh, steptype, LogFile.c_str());
 	DROPTABLE_Name = CSG_String("Drop Analysis");
 
 	// make sure temp dir exists

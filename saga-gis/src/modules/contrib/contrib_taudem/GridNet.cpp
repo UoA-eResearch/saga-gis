@@ -136,16 +136,16 @@ bool CGridNet::On_Execute(void)
 	CSG_String OptionalFlags = CSG_String("");
 	if (OUTLET_INPUT_Grid != NULL)
 	{
-		OptionalFlags = CSG_String::Format(SG_T(" -o %s"), OUTLET_INPUT_FilePath.c_str());
+		OptionalFlags = CSG_String::Format(SG_T(" -o \"%s\""), OUTLET_INPUT_FilePath.c_str());
 	}
 	if (MASK_INPUT_Grid != NULL)
 	{
-		OptionalFlags = OptionalFlags + CSG_String::Format(SG_T(" -mask %s -thresh %d"), MASK_INPUT_FilePath.c_str(), Threshold);
+		OptionalFlags = OptionalFlags + CSG_String::Format(SG_T(" -mask \"%s\" -thresh %d"), MASK_INPUT_FilePath.c_str(), Threshold);
 	}
 		
 	BinaryName = CSG_String("GridNet"); 
 	BinaryPath = SG_File_Make_Path(TauDEMBinDir, BinaryName);
-	sCmd = CSG_String::Format(SG_T("mpiexec -n %d %s -p %s -plen %s -tlen %s -gord %s > %s 2>&1"), nproc, BinaryPath.c_str(), FLOWD8_INPUT_FilePath.c_str(), LONGEST_OUTPUT_FilePath.c_str(), TOTAL_LENGTH_OUTPUT_FilePath.c_str(), ORDER_OUTPUT_FilePath.c_str(), LogFile.c_str());
+	sCmd = CSG_String::Format(SG_T("\"mpiexec -n %d \"%s\" -p \"%s\" -plen \"%s\" -tlen \"%s\" -gord \"%s\" %s > \"%s\" 2>&1\""), nproc, BinaryPath.c_str(), FLOWD8_INPUT_FilePath.c_str(), LONGEST_OUTPUT_FilePath.c_str(), TOTAL_LENGTH_OUTPUT_FilePath.c_str(), ORDER_OUTPUT_FilePath.c_str(), OptionalFlags.c_str(), LogFile.c_str());
 	LONGESTName = CSG_String("D8 LongestPath");
 	LENGTHName = CSG_String("D8 TotalLength");
 	ORDERName = CSG_String("D8 GridOrder");

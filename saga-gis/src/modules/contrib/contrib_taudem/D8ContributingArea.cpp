@@ -129,11 +129,11 @@ bool CD8ContributingArea::On_Execute(void)
 	CSG_String OptionalFlags = CSG_String("");
 	if (OUTLET_INPUTS_Shapes != NULL)
 	{
-		OptionalFlags = CSG_String::Format(SG_T(" -o %s"), OUTLET_INPUT_FilePath.c_str());
+		OptionalFlags = CSG_String::Format(SG_T(" -o \"%s\""), OUTLET_INPUT_FilePath.c_str());
 	}
 	if (WEIGHTGRID_INPUT_Grid != NULL)
 	{
-		OptionalFlags = OptionalFlags + CSG_String::Format(SG_T(" -wg %s"), WEIGHTGRID_INPUT_FilePath.c_str());
+		OptionalFlags = OptionalFlags + CSG_String::Format(SG_T(" -wg \"%s\""), WEIGHTGRID_INPUT_FilePath.c_str());
 	}
 	if( !Parameters("NC")->asBool() ){
 		OptionalFlags = OptionalFlags + CSG_String(" -nc");
@@ -141,7 +141,7 @@ bool CD8ContributingArea::On_Execute(void)
 
 	BinaryName = CSG_String("AreaD8"); 
 	BinaryPath = SG_File_Make_Path(TauDEMBinDir, BinaryName);
-	sCmd = CSG_String::Format(SG_T("mpiexec -n %d %s -p %s -ad8 %s %s > %s 2>&1"), nproc, BinaryPath.c_str(), FLOWD8_INPUT_FilePath.c_str(), AREAD8_OUTPUT_FilePath.c_str(), OptionalFlags.c_str(), LogFile.c_str());
+	sCmd = CSG_String::Format(SG_T("\"mpiexec -n %d \"%s\" -p \"%s\" -ad8 \"%s\" %s > \"%s\" 2>&1\""), nproc, BinaryPath.c_str(), FLOWD8_INPUT_FilePath.c_str(), AREAD8_OUTPUT_FilePath.c_str(), OptionalFlags.c_str(), LogFile.c_str());
 	AreaName = CSG_String("D8 Contributing Area");
 
 	// make sure temp dir exists

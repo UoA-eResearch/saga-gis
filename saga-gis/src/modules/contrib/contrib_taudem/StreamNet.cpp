@@ -188,7 +188,7 @@ bool CStreamNet::On_Execute(void)
 	CSG_String OptionalFlags = CSG_String("");
 	if (OUTLET_INPUT_Shapes != NULL)
 	{
-		OptionalFlags = CSG_String::Format(SG_T("-o %s "), OUTLET_INPUT_FilePath.c_str());
+		OptionalFlags = CSG_String::Format(SG_T("-o \"%s\" "), OUTLET_INPUT_FilePath.c_str());
 	}
 	if (sw)
 	{
@@ -198,7 +198,7 @@ bool CStreamNet::On_Execute(void)
 	// exec commnad
 	BinaryName = CSG_String("StreamNet"); // D8
 	BinaryPath = SG_File_Make_Path(TauDEMBinDir, BinaryName);
-	sCmd = CSG_String::Format(SG_T("mpiexec -n %d %s -fel %s -p %s -ad8 %s -src %s -ord %s -tree %s -coord %s -net %s -w %s %s> %s 2>&1"), nproc, BinaryPath.c_str(), FEL_INPUT_FilePath.c_str(), FLOWD8_INPUT_FilePath.c_str(), AREAD8_INPUT_FilePath.c_str(), SRC_INPUT_FilePath.c_str(), ORD_OUTPUT_FilePath.c_str(), TREE_OUTPUT_FilePath.c_str(), COORD_OUTPUT_FilePath.c_str(), NET_OUTPUT_FilePath.c_str(), W_OUTPUT_FilePath.c_str(), OptionalFlags.c_str(), LogFile.c_str());
+	sCmd = CSG_String::Format(SG_T("\"mpiexec -n %d \"%s\" -fel \"%s\" -p \"%s\" -ad8 \"%s\" -src \"%s\" -ord \"%s\" -tree \"%s\" -coord \"%s\" -net \"%s\" -w \"%s\" %s >\"%s\" 2>&1\""), nproc, BinaryPath.c_str(), FEL_INPUT_FilePath.c_str(), FLOWD8_INPUT_FilePath.c_str(), AREAD8_INPUT_FilePath.c_str(), SRC_INPUT_FilePath.c_str(), ORD_OUTPUT_FilePath.c_str(), TREE_OUTPUT_FilePath.c_str(), COORD_OUTPUT_FilePath.c_str(), NET_OUTPUT_FilePath.c_str(), W_OUTPUT_FilePath.c_str(), OptionalFlags.c_str(), LogFile.c_str());
 
 	// make sure temp dir exists
 	if (!SG_Dir_Exists(TempDirPath))
