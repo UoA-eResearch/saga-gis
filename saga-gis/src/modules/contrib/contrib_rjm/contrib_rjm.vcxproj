@@ -20,7 +20,7 @@
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{AD6966BC-03C1-423D-965F-7E535BC3AAD5}</ProjectGuid>
-    <ProjectName>zcontrib_rjm</ProjectName>
+    <ProjectName>contrib_rjm</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">

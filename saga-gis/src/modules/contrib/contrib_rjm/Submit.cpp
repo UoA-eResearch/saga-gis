@@ -75,7 +75,7 @@ CSubmit::CSubmit(void)
 	Parameters.Add_Value(NULL, "CPUS"	, _TL("CPUs per task"), _TL("The number of CPUs that will be available for each task. This is equivalent to the number of threads each process will use."), PARAMETER_TYPE_Int, 1, 1, true);
 	Parameters.Add_Value(NULL, "MEMORY"	, _TL("Memory (GB)"), _TL("Memory to use for the job in GB. For MPI Jobs this is the per process memory. For Single Process jobs, this is the total memory."), PARAMETER_TYPE_Int, 2, 1, true);
 	Parameters.Add_String(NULL, "PROJECT_CODE", _TL("Project Code"), _TL("Project code used for accounting job hours."), ProjectCode, PARAMETER_INPUT);
-	Parameters.Add_Value(NULL, "WAIT", _TL("Wait for job completion?"),_TL("Note it is fine to and run the Wait tool instead."), PARAMETER_TYPE_Bool, true);
+	Parameters.Add_Value(NULL, "WAIT", _TL("Wait for job completion?"),_TL("Note it is fine to skip this and run the Wait tool instead."), PARAMETER_TYPE_Bool, true);
 	Parameters.Add_Value(NULL, "POLLING_INTERVAL", _TL("Check Interval"), _TL("Seconds to wait before checking for job completion."), PARAMETER_TYPE_Int, 60, 10, true);
 	Parameters.Add_Value(NULL, "CLEAN", _TL("Clean up on completion?"),_TL("Deletes job files on remote system after they have been downloaded"), PARAMETER_TYPE_Bool, true);
 	Parameters.Add_FilePath(NULL, "TEMP_DIR", _TL("Temp File Directory"), _TL("Directory used for storing temporary files during processing."), NULL, DefaultTempDir, false, true, false); 
@@ -287,7 +287,7 @@ bool CSubmit::On_Execute(void)
 		}
 
 		// command
-		CSG_String RJMCMD = CSG_String::Format(SG_T("%s -c \"%s\" -f \"%s\" -l \"%s\" -ll %s -w %s -m %dG -p %s -d \"%s\" -j %s"), RJMBatchSubmit.c_str(), RemoteCommand.c_str(), RJMJobList.c_str(), RJMLogFilePath.c_str(), LogLevel.c_str(), Walltime.c_str(), Memory, ProjectCode.c_str(), RemoteDirectory.c_str(), JobType.c_str());
+		CSG_String RJMCMD = CSG_String::Format(SG_T("\"\"%s\" -c \"%s\" -f \"%s\" -l \"%s\" -ll %s -w %s -m %dG -p %s -d \"%s\" -j %s\""), RJMBatchSubmit.c_str(), RemoteCommand.c_str(), RJMJobList.c_str(), RJMLogFilePath.c_str(), LogLevel.c_str(), Walltime.c_str(), Memory, ProjectCode.c_str(), RemoteDirectory.c_str(), JobType.c_str());
 		Message_Add(CSG_String("Executing: ") + RJMCMD);
 		Process_Set_Text(CSG_String("Submitting job ..."));
 
@@ -305,14 +305,14 @@ bool CSubmit::On_Execute(void)
 			Message_Add(CSG_String("Submission succeeded, waiting for job completion..."));
 			Process_Set_Text(CSG_String("Waiting for job completion ..."));
 			#ifdef _WIN32
-				RJMCMD = CSG_String::Format(SG_T("cmd /c START %s -f \"%s\" -l \"%s\" -ll %s -z %d"), RJMBatchWait.c_str(), RJMJobList.c_str(), RJMLogFilePath.c_str(), LogLevel.c_str(), PollingInterval);
-				//RJMCMD = CSG_String::Format(SG_T("cmd /c START %s -f \"%s\" -ll info -z %d"), RJMBatchWait.c_str(), RJMJobList.c_str(), PollingInterval);
+				//RJMCMD = CSG_String::Format(SG_T("cmd /c START \"%s\" -f \"%s\" -l \"%s\" -ll %s -z %d"), RJMBatchWait.c_str(), RJMJobList.c_str(), RJMLogFilePath.c_str(), LogLevel.c_str(), PollingInterval);
+				RJMCMD = CSG_String::Format(SG_T("START \"Waiting for job ...\" \"%s\" -f \"%s\" -l \"%s\" -ll %s -z %d"), RJMBatchWait.c_str(), RJMJobList.c_str(), RJMLogFilePath.c_str(), LogLevel.c_str(), PollingInterval);
 			#else
 				RJMCMD = CSG_String::Format(SG_T("%s -f \"%s\" -l \"%s\" -ll %s -z %d &"), RJMBatchWait.c_str(), RJMJobList.c_str(), RJMLogFilePath.c_str(), LogLevel.c_str(), PollingInterval);
 			#endif
-			
-				
+	
 			// wait
+			Message_Add(CSG_String("Executing: ") + RJMCMD);
 			if (system(RJMCMD.b_str()) != 0)
 			{
 				Message_Dlg(CSG_String::Format(SG_T("Error while waiting for job completion, see Execution log for details")));
@@ -348,7 +348,7 @@ bool CSubmit::On_Execute(void)
 					
 					Message_Add(CSG_String("Results downloaded, cleaning up remote files ..."));
 					Process_Set_Text(CSG_String("Cleaning up remote files ..."));
-					RJMCMD = CSG_String::Format(SG_T("%s -f \"%s\" -l \"%s\" -ll %s"), RJMBatchClean.c_str(), RJMJobList.c_str(), RJMLogFilePath.c_str(), LogLevel.c_str());
+					RJMCMD = CSG_String::Format(SG_T("\"\"%s\" -f \"%s\" -l \"%s\" -ll %s\""), RJMBatchClean.c_str(), RJMJobList.c_str(), RJMLogFilePath.c_str(), LogLevel.c_str());
 				
 					// clean
 					if (system(RJMCMD.b_str()) != 0)

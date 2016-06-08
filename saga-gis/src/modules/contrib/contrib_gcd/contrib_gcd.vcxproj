@@ -20,7 +20,7 @@
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{992B02BB-F92A-4A95-935F-869551517102}</ProjectGuid>
-    <ProjectName>zcontrib_gcd</ProjectName>
+    <ProjectName>contrib_gcd</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
@@ -177,7 +177,7 @@
     </ResourceCompile>
     <Link>
       <AdditionalDependencies>saga_api.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <OutputFile>$(OutDir)z$(ProjectName).dll</OutputFile>
+      <OutputFile>$(OutDir)$(ProjectName).dll</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <AdditionalLibraryDirectories>$(GDAL)\lib;..\..\..\..\bin\saga_vc_$(Platform)_d\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>true</GenerateDebugInformation>

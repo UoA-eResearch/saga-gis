@@ -90,10 +90,6 @@ Cdodthresholdprob::Cdodthresholdprob(void)
 	GCD = SG_File_Make_Path(GCDBinDir, CSG_String("gcd"), CSG_String("exe"));
 	GCD_CMD = CSG_String("dodthresholdprob");
 
-	// Logging
-	LogOutput = SG_File_Make_Path(GCDBinDir, CSG_String("out"), CSG_String("txt"));
-	LogError = SG_File_Make_Path(GCDBinDir, CSG_String("error"), CSG_String("txt"));;
-
 	// Grids
 	Parameters.Add_Grid(NULL, "DOD_INPUT"	, _TL("DoD"), _TL("Raster to be used as DoD"), PARAMETER_INPUT);
 	Parameters.Add_Grid(NULL, "NEW_SURVEYERROR"	, _TL("New Survey Error"), _TL("Error raster for new survey"), PARAMETER_INPUT);
@@ -128,6 +124,10 @@ bool Cdodthresholdprob::On_Execute(void)
 	}
 	CSG_String TempDirPath = Parameters("TEMP_DIR")->asFilePath()->asString();
 
+	// Logging
+	LogOutput = SG_File_Make_Path(TempDirPath, CSG_String("out"), CSG_String("txt"));
+	LogError = SG_File_Make_Path(TempDirPath, CSG_String("error"), CSG_String("txt"));
+
 	DoD_InputPath = SG_File_Make_Path(TempDirPath, CSG_String("dodinput"), CSG_String("tif"));
 	NewSurveyError_InputPath = SG_File_Make_Path(TempDirPath, CSG_String("newsurveyerror"), CSG_String("tif"));
 	OldSurveyError_InputPath = SG_File_Make_Path(TempDirPath, CSG_String("oldsurveyerror"), CSG_String("tif"));
@@ -139,6 +139,7 @@ bool Cdodthresholdprob::On_Execute(void)
 	CSG_Grid* InputGrids [3] = {DoD_Input, NewSurveyError_Input, OldSurveyError_Input};
 
 	CSG_Strings InputGridPaths = CSG_Strings();
+	InputGridPaths.Add(DoD_InputPath);
 	InputGridPaths.Add(NewSurveyError_InputPath);
 	InputGridPaths.Add(OldSurveyError_InputPath);
 
@@ -161,7 +162,7 @@ bool Cdodthresholdprob::On_Execute(void)
 		return false;
 	}
 
-	CSG_String CMD = CSG_String::Format(SG_T("%s %s %s %s %s %s %s %f >%s 2>%s"), GCD.c_str(), GCD_CMD.c_str(), DoD_InputPath.c_str(), Threshold_OutputPath.c_str(), NewSurveyError_InputPath.c_str(), OldSurveyError_InputPath.c_str(), PriorProb_OutputPath.c_str(), ThresholdValue, LogOutput.c_str(), LogError.c_str());
+	CSG_String CMD = CSG_String::Format(SG_T("\"\"%s\" %s \"%s\" \"%s\" \"%s\" \"%s\" \"%s\" %f >\"%s\" 2>\"%s\"\""), GCD.c_str(), GCD_CMD.c_str(), DoD_InputPath.c_str(), Threshold_OutputPath.c_str(), NewSurveyError_InputPath.c_str(), OldSurveyError_InputPath.c_str(), PriorProb_OutputPath.c_str(), ThresholdValue, LogOutput.c_str(), LogError.c_str());
 	Message_Add(CSG_String("Executing: ") + CMD);			
 	if (system(CMD.b_str()) != 0)
 	{

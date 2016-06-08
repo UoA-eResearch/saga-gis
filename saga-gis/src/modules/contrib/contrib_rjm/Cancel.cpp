@@ -159,7 +159,7 @@ bool CCancel::On_Execute(void)
 		Set_Progress(10);
 		Message_Add(CSG_String("Cancelling remote jobs ..."));
 		Process_Set_Text(CSG_String("Cancelling remote jobs ..."));
-		CSG_String RJMCMD = CSG_String::Format(SG_T("%s -f \"%s\" -l \"%s\" -ll %s -z %d"), RJMBatchCancel.c_str(), RJMJobList.c_str(), RJMLogFilePath.c_str(), LogLevel.c_str(), PollingInterval);
+		CSG_String RJMCMD = CSG_String::Format(SG_T("\"\"%s\" -f \"%s\" -l \"%s\" -ll %s -z %d\""), RJMBatchCancel.c_str(), RJMJobList.c_str(), RJMLogFilePath.c_str(), LogLevel.c_str(), PollingInterval);
 				
 		// cancel
 		if (system(RJMCMD.b_str()) != 0)

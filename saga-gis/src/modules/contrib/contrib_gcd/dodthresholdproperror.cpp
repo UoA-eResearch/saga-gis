@@ -91,10 +91,6 @@ Cdodthresholdproperror::Cdodthresholdproperror(void)
 	GCD = SG_File_Make_Path(GCDBinDir, CSG_String("gcd"), CSG_String("exe"));
 	GCD_CMD = CSG_String("dodthresholdproperror");
 
-	// Logging
-	LogOutput = SG_File_Make_Path(GCDBinDir, CSG_String("out"), CSG_String("txt"));
-	LogError = SG_File_Make_Path(GCDBinDir, CSG_String("error"), CSG_String("txt"));;
-
 	// Grids
 	Parameters.Add_Grid(NULL, "DOD_INPUT"	, _TL("DoD"), _TL("Raster to be used as DoD"), PARAMETER_INPUT);
 	Parameters.Add_Grid(NULL, "DOD_PROPERROR"	, _TL("Propagated Error"), _TL("Propagated error raster"), PARAMETER_INPUT);
@@ -125,7 +121,10 @@ bool Cdodthresholdproperror::On_Execute(void)
 		return false;
 	}
 	CSG_String TempDirPath = Parameters("TEMP_DIR")->asFilePath()->asString();
-	
+
+	LogOutput = SG_File_Make_Path(TempDirPath, CSG_String("out"), CSG_String("txt"));
+	LogError = SG_File_Make_Path(TempDirPath, CSG_String("error"), CSG_String("txt"));;
+
 	DoD_InputPath = SG_File_Make_Path(TempDirPath, CSG_String("dodinput"), CSG_String("tif"));
 	DoD_PropErrorPath = SG_File_Make_Path(TempDirPath, CSG_String("dodproperror"), CSG_String("tif"));
 	DoD_OutputPath = SG_File_Make_Path(TempDirPath, CSG_String("dodoutput"), CSG_String("tif"));
@@ -148,7 +147,7 @@ bool Cdodthresholdproperror::On_Execute(void)
 		return false;
 	}
 
-	CSG_String CMD = CSG_String::Format(SG_T("%s %s %s %s %s >%s 2>%s"), GCD.c_str(), GCD_CMD.c_str(), DoD_InputPath.c_str(), DoD_PropErrorPath.c_str(), DoD_OutputPath.c_str(),LogOutput.c_str(), LogError.c_str());
+	CSG_String CMD = CSG_String::Format(SG_T("\"\"%s\" %s \"%s\" \"%s\" \"%s\" >\"%s\" 2>\"%s\"\""), GCD.c_str(), GCD_CMD.c_str(), DoD_InputPath.c_str(), DoD_PropErrorPath.c_str(), DoD_OutputPath.c_str(),LogOutput.c_str(), LogError.c_str());
 	Message_Add(CSG_String("Executing: ") + CMD);			
 	if (system(CMD.b_str()) != 0)
 	{
