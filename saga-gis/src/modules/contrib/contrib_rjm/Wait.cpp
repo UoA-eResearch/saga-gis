@@ -160,8 +160,8 @@ bool CWait::On_Execute(void)
 	Message_Add(CSG_String("Waiting for job completion..."));
 	Process_Set_Text(CSG_String("Waiting for job completion ..."));
 	#ifdef _WIN32
-		CSG_String RJMCMD = CSG_String::Format(SG_T("cmd /c START %s -f \"%s\" -l \"%s\" -ll %s -z %d"), RJMBatchWait.c_str(), RJMJobList.c_str(), RJMLogFilePath.c_str(), LogLevel.c_str(), PollingInterval);
-		//RJMCMD = CSG_String::Format(SG_T("cmd /c START %s -f \"%s\" -ll info -z %d"), RJMBatchWait.c_str(), RJMJobList.c_str(), PollingInterval);
+		//CSG_String RJMCMD = CSG_String::Format(SG_T("cmd /c START %s -f \"%s\" -l \"%s\" -ll %s -z %d"), RJMBatchWait.c_str(), RJMJobList.c_str(), RJMLogFilePath.c_str(), LogLevel.c_str(), PollingInterval);
+		CSG_String RJMCMD = CSG_String::Format(SG_T("START \"Waiting for job ...\" \"%s\" -f \"%s\" -l \"%s\" -ll %s -z %d"), RJMBatchWait.c_str(), RJMJobList.c_str(), RJMLogFilePath.c_str(), LogLevel.c_str(), PollingInterval);
 	#else
 		CSG_String RJMCMD = CSG_String::Format(SG_T("%s -f \"%s\" -l \"%s\" -ll %s -z %d &"), RJMBatchWait.c_str(), RJMJobList.c_str(), RJMLogFilePath.c_str(), LogLevel.c_str(), PollingInterval);
 	#endif
@@ -195,7 +195,7 @@ bool CWait::On_Execute(void)
 					
 			Message_Add(CSG_String("Results downloaded, cleaning up remote files ..."));
 			Process_Set_Text(CSG_String("Cleaning up remote files ..."));
-			RJMCMD = CSG_String::Format(SG_T("%s -f \"%s\" -l \"%s\" -ll %s"), RJMBatchClean.c_str(), RJMJobList.c_str(), RJMLogFilePath.c_str(), LogLevel.c_str());
+			RJMCMD = CSG_String::Format(SG_T("\"\"%s\" -f \"%s\" -l \"%s\" -ll %s\""), RJMBatchClean.c_str(), RJMJobList.c_str(), RJMLogFilePath.c_str(), LogLevel.c_str());
 				
 			// clean
 			if (system(RJMCMD.b_str()) != 0)

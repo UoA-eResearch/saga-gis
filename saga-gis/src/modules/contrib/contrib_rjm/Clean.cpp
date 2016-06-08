@@ -159,7 +159,7 @@ bool CClean::On_Execute(void)
 		Set_Progress(10);
 		Message_Add(CSG_String("Cleaning up remote files ..."));
 		Process_Set_Text(CSG_String("Cleaning up remote files ..."));
-		CSG_String RJMCMD = CSG_String::Format(SG_T("%s -f \"%s\" -l \"%s\" -ll %s"), RJMBatchClean.c_str(), RJMJobList.c_str(), RJMLogFilePath.c_str(), LogLevel.c_str());
+		CSG_String RJMCMD = CSG_String::Format(SG_T("\"\"%s\" -f \"%s\" -l \"%s\" -ll %s\""), RJMBatchClean.c_str(), RJMJobList.c_str(), RJMLogFilePath.c_str(), LogLevel.c_str());
 				
 		// clean
 		if (system(RJMCMD.b_str()) != 0)
