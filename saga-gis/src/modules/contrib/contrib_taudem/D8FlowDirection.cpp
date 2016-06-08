@@ -113,7 +113,7 @@ bool CD8FlowDirection::On_Execute(void)
 		
 	BinaryName = CSG_String("D8FlowDir"); // D8
 	BinaryPath = SG_File_Make_Path(TauDEMBinDir, BinaryName);
-	sCmd = CSG_String::Format(SG_T("mpiexec -n %d %s -p %s -sd8 %s -fel %s > %s 2>&1"), nproc, BinaryPath.c_str(), FLOW_OUTPUT_FilePath.c_str(), SLOPE_OUTPUT_FilePath.c_str(), FEL_INPUT_FilePath.c_str(), LogFile.c_str());
+	sCmd = CSG_String::Format(SG_T("\"mpiexec -n %d \"%s\" -p \"%s\" -sd8 \"%s\" -fel \"%s\" > \"%s\" 2>&1\""), nproc, BinaryPath.c_str(), FLOW_OUTPUT_FilePath.c_str(), SLOPE_OUTPUT_FilePath.c_str(), FEL_INPUT_FilePath.c_str(), LogFile.c_str());
 	FlowName = CSG_String("D8 Flow Direction");
 	SlopeName = CSG_String("D8 Slope");
 

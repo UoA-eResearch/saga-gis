@@ -123,13 +123,13 @@ bool CThreshold::On_Execute(void)
 	CSG_String OptionalFlags = CSG_String("");
 	if (MASK_INPUT_Grid != NULL)
 	{
-		OptionalFlags = CSG_String::Format(SG_T("-mask %s"), MASK_INPUT_FilePath.c_str());
+		OptionalFlags = CSG_String::Format(SG_T("-mask \"%s\""), MASK_INPUT_FilePath.c_str());
 	}
 
 	// exec commnad
 	BinaryName = CSG_String("Threshold"); // D8
 	BinaryPath = SG_File_Make_Path(TauDEMBinDir, BinaryName);
-	sCmd = CSG_String::Format(SG_T("mpiexec -n %d %s -ssa %s -src %s -thresh %f %s > %s 2>&1"), nproc, BinaryPath.c_str(), SSA_INPUT_FilePath.c_str(), SRC_OUTPUT_FilePath.c_str(), Threshold, OptionalFlags.c_str(), LogFile.c_str());
+	sCmd = CSG_String::Format(SG_T("\"mpiexec -n %d \"%s\" -ssa \"%s\" -src \"%s\" -thresh %f %s > \"%s\" 2>&1\""), nproc, BinaryPath.c_str(), SSA_INPUT_FilePath.c_str(), SRC_OUTPUT_FilePath.c_str(), Threshold, OptionalFlags.c_str(), LogFile.c_str());
 	SRC_OUTPUT_Name = CSG_String("Stream Raster");
 
 	// make sure temp dir exists

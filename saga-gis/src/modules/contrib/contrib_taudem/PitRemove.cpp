@@ -151,7 +151,7 @@ bool CPitRemove::On_Execute(void)
 		return( false );
 	}
 
-	sCmd = CSG_String::Format(SG_T("mpiexec -n %d %s -z %s -fel %s > %s 2>&1"), nproc, BinaryPath.c_str(), EL_INPUT_FilePath.c_str(), FEL_OUTPUT_FilePath.c_str(), LogFile.c_str());
+	sCmd = CSG_String::Format(SG_T("\"mpiexec -n %d \"%s\" -z \"%s\" -fel \"%s\" > \"%s\" 2>&1\""), nproc, BinaryPath.c_str(), EL_INPUT_FilePath.c_str(), FEL_OUTPUT_FilePath.c_str(), LogFile.c_str());
 	Message_Add(CSG_String("Executing: ") + sCmd);
 
 	// run process

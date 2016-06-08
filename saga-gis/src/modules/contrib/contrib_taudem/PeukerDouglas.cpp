@@ -121,7 +121,7 @@ bool CPeukerDouglas::On_Execute(void)
 
 	BinaryName = CSG_String("PeukerDouglas"); 
 	BinaryPath = SG_File_Make_Path(TauDEMBinDir, BinaryName);
-	sCmd = CSG_String::Format(SG_T("mpiexec -n %d %s -fel %s -ss %s -par %f %f %f > %s 2>&1"), nproc, BinaryPath.c_str(), FEL_INPUT_FilePath.c_str(), NETWORK_OUTPUT_FilePath.c_str(), wmid, wside, wdiag, LogFile.c_str());
+	sCmd = CSG_String::Format(SG_T("\"mpiexec -n %d \"%s\" -fel \"%s\" -ss \"%s\" -par %f %f %f > \"%s\" 2>&1\""), nproc, BinaryPath.c_str(), FEL_INPUT_FilePath.c_str(), NETWORK_OUTPUT_FilePath.c_str(), wmid, wside, wdiag, LogFile.c_str());
 	NetworkName = CSG_String("Stream Source");
 
 
