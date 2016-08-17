@@ -287,7 +287,7 @@ bool CSubmit::On_Execute(void)
 		}
 
 		// command
-		CSG_String RJMCMD = CSG_String::Format(SG_T("\"\"%s\" -c \"%s\" -f \"%s\" -l \"%s\" -ll %s -w %s -m %dG -p %s -d \"%s\" -j %s\""), RJMBatchSubmit.c_str(), RemoteCommand.c_str(), RJMJobList.c_str(), RJMLogFilePath.c_str(), LogLevel.c_str(), Walltime.c_str(), Memory, ProjectCode.c_str(), RemoteDirectory.c_str(), JobType.c_str());
+		CSG_String RJMCMD = CSG_String::Format(SG_T("\"\"%s\" -c \"%s\" -f \"%s\" -l \"%s\" -ll \"%s\" -w \"%s\" -m %dG -p \"%s\" -d \"%s\" -j \"%s\"\""), RJMBatchSubmit.c_str(), RemoteCommand.c_str(), RJMJobList.c_str(), RJMLogFilePath.c_str(), LogLevel.c_str(), Walltime.c_str(), Memory, ProjectCode.c_str(), RemoteDirectory.c_str(), JobType.c_str());
 		Message_Add(CSG_String("Executing: ") + RJMCMD);
 		Process_Set_Text(CSG_String("Submitting job ..."));
 
@@ -635,7 +635,7 @@ CSG_String CSubmit::GetModules()
 	CSG_String ErrorFile = SG_File_Make_Path(RJMTempDir, CSG_String("error"), CSG_String("txt"));
 	ErrorFile = SG_File_Get_Path_Absolute(ErrorFile);
 
-	CSG_String cmd = CSG_String::Format(SG_T("%s module avail >%s 2>%s"), RJMRunRemote.c_str(), OutFile.c_str(), ErrorFile.c_str());
+	CSG_String cmd = CSG_String::Format(SG_T("\"\"%s\" module avail >\"%s\" 2>\"%s\"\""), RJMRunRemote.c_str(), OutFile.c_str(), ErrorFile.c_str());
 	Message_Add(CSG_String("Executing: ") + cmd);
 
 	// run process

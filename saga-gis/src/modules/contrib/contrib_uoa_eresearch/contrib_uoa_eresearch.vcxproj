@@ -339,8 +339,6 @@
     <ClInclude Include="utility.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Dunes.cpp" />
-    <ClCompile Include="Life_test.cpp" />
     <ClCompile Include="MLB_Interface.cpp" />
     <ClCompile Include="streampower.cpp" />
     <ClCompile Include="stream_power_model.cpp" />
