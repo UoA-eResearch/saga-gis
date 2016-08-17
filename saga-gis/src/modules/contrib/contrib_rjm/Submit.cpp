@@ -512,7 +512,10 @@ bool CSubmit::GetParameterValues()
 	{
 		Message_Dlg(CSG_String::Format(SG_T("%s"), _TL("Command string is required.")));
 		return false;
-
+	} else if (RemoteCommand.Contains("\n") || RemoteCommand.Contains("\r"))
+	{
+		Message_Dlg(CSG_String::Format(SG_T("%s"), _TL("No new line characters allowed in command string. Please use ; if you need to separate commnads.")));
+		return false;
 	}
 
 	// remote dir
