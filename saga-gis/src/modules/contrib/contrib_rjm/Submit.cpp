@@ -130,12 +130,6 @@ CSubmit::CSubmit(void)
 
 	// read config file
 	ReadConfig();
-
-	// set some parameter defaults
-	Parameters("JOB_LIST")->asFilePath()->Set_Value(RJMJobList);
-	Parameters("PROJECT_CODE")->Set_Value(DefaultProjectCode);
-	Parameters("REMOTE_DIRECTORY")->Set_Value(DefaultRemoteDirectory);
-	Parameters("LOGFILE")->Set_Value(RJMLogFilePath);
 }
 
 
@@ -178,6 +172,16 @@ bool CSubmit::On_Execute(void)
 
 	if ( ModuleRefresh )
 	{
+		RemoteCommand = Parameters("COMMAND")->asString();
+		if (!RemoteCommand.is_Empty())
+		{
+			bool refresh = Message_Dlg_Confirm(CSG_String::Format(SG_T("%s"), _TL("Selected module is 'Refresh', no job will be submitted. Continue?")));
+			if (!refresh)
+			{
+				return false;
+			}
+		}
+
 		CSG_String modules = GetModules();
 		Parameters("MODULE")->asChoice()->Set_Items(modules);
 	} else {
@@ -567,7 +571,7 @@ bool CSubmit::ConfigExists()
 
 void CSubmit::ReadConfig()
 {
-	
+
 	if (ConfigExists())
 	{
 		// read ini file
@@ -595,7 +599,13 @@ void CSubmit::ReadConfig()
 		// config retry
 		MaxAttempts = CSG_String(ini.GetValue("RETRY", "max_attempts", "")).asInt();		Parameters("MAX_ATTEMPTS")->Set_Value(MaxAttempts); 
 		MinWait = CSG_String(ini.GetValue("RETRY", "min_wait_s", "")).asDouble();				Parameters("MIN_WAIT")->Set_Value(MinWait); 
-		MaxWait = CSG_String(ini.GetValue("RETRY", "max_wait_s", "")).asDouble();				Parameters("MAX_WAIT")->Set_Value(MaxWait); 
+		MaxWait = CSG_String(ini.GetValue("RETRY", "max_wait_s", "")).asDouble();		
+
+		// set some parameter defaults
+		Parameters("JOB_LIST")->asFilePath()->Set_Value(RJMJobList);
+		Parameters("PROJECT_CODE")->Set_Value(DefaultProjectCode);
+		Parameters("REMOTE_DIRECTORY")->Set_Value(DefaultRemoteDirectory);
+		Parameters("LOGFILE")->Set_Value(RJMLogFilePath);		Parameters("MAX_WAIT")->Set_Value(MaxWait); 
 	}
 }
 
