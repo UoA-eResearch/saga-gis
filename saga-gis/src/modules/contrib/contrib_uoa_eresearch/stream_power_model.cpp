@@ -112,7 +112,7 @@ Cstream_power_model::Cstream_power_model(void)
 		_TL("")
 	);
 	
-	Parameters.Add_Value(pNode, "U_SCALAR", _TL("Uplift (per kyrs)"), _TL("Uplift rate per kyrs"), PARAMETER_TYPE_Double, 1, 0, true);
+	Parameters.Add_Value(pNode, "U_SCALAR", _TL("Uplift (m per kyrs)"), _TL("Uplift rate per kyrs"), PARAMETER_TYPE_Double, 1, 0, true);
 	Parameters.Add_Value(pNode, "K_SCALAR", _TL("Diffusion (per kyrs)"), _TL("Diffusion rate per kyrs"), PARAMETER_TYPE_Double, 30, 0, true);
 
 	// Grid parameters
@@ -121,16 +121,17 @@ Cstream_power_model::Cstream_power_model(void)
 		_TL("")
 	);
 
-	Parameters.Add_Grid(pNode, "U_GRID"	, _TL("Uplift (per kyrs)"), _TL("Uplift field, rate per kyrs"), PARAMETER_OPTIONAL);
+	Parameters.Add_Grid(pNode, "U_GRID"	, _TL("Uplift (m per kyrs)"), _TL("Uplift field, meters per kyrs"), PARAMETER_OPTIONAL);
 	Parameters.Add_Grid(pNode, "K_GRID"	, _TL("Diffusion (per kyrs)"), _TL("Diffusion field, rate per kyrs"), PARAMETER_OPTIONAL);
 	
+	Parameters.Add_Value(NULL, "ANGLE", _TL("Threshold Angle (Degrees)"), _TL("Key paramater in avalanche algorithm. Threshold will be sin(angle) * cellsize"), PARAMETER_TYPE_Double, 30.0, 0, true, 90.0, true);
 	Parameters.Add_Value(NULL, "T", _TL("Timestep (kyrs)"), _TL("Timestep in thousands of years. A lower timestep will produce more accurate results but can take longer to run."), PARAMETER_TYPE_Double, 0.001, 0, true);
 	Parameters.Add_Value(NULL, "DURATION", _TL("Duration (kyrs)"), _TL("Duration in kyrs"), PARAMETER_TYPE_Double, 1, 0, true);
-	Parameters.Add_Value(NULL, "OUTPUT_FREQUENCY", _TL("Output Frequency (yrs)"), _TL("Frequency at which to save output in years"), PARAMETER_TYPE_Int, 10, 0, true);
+	Parameters.Add_Value(NULL, "OUTPUT_FREQUENCY", _TL("Output Frequency (steps)"), _TL("Number of simulation steps before saving output. Output filename will be rounded to nearest integer year"), PARAMETER_TYPE_Int, 10, 0, true);
 	Parameters.Add_Value(
 		NULL, "SCALE_TIMESTEP"		, _TL("Auto-scale Timestep"),
 		_TL("Enabling this option can lead to more accurate results but will take significantly longer"),
-		PARAMETER_TYPE_Bool, false
+		PARAMETER_TYPE_Bool, true
 	);		
 
 }
@@ -226,7 +227,8 @@ bool Cstream_power_model::On_Execute(void)
 	p.scale_timestep = Parameters("SCALE_TIMESTEP")->asBool();
 
 	StreamPower sp = StreamPower(p);
-	sp.Init(input->Get_NX(), input->Get_NY(), input->Get_XMin(), input->Get_YMin(), input->Get_Cellsize(), input->Get_NoData_Value());
+	double angle_degrees = Parameters("ANGLE")->asDouble();
+	sp.Init(input->Get_NX(), input->Get_NY(), input->Get_XMin(), input->Get_YMin(), input->Get_Cellsize(), input->Get_NoData_Value(), angle_degrees);
 	sp.SetTopo(GridToVector(input));
 
 	if (scalar)
@@ -257,20 +259,25 @@ bool Cstream_power_model::On_Execute(void)
 	
 
 	Process_Set_Text(CSG_String::Format(SG_T("%f years"), 0));
+
+	unsigned long nsteps = 0;
 	unsigned long next_output_time = output_freq;
+
 	while (Process_Get_Okay(true) && sp.time <= sp.duration)
 	{
 		sp.Step();
-
+		
 		Process_Set_Text(CSG_String::Format(SG_T("%.2f years"), sp.time * 1000));
 		Set_Progress( (sp.time / sp.duration) * 100 );
 		VectorToGrid(sp.GetTopo(), output);
 		DataObject_Update(output, true);
 
+		nsteps++;		
+
 		// save state
-		lyrs = (unsigned long)(sp.time * 1000);
-		if (lyrs == next_output_time)
+		if (nsteps == next_output_time)
 		{
+			lyrs = (unsigned long)(sp.time * 1000);
 			ofname = CSG_String::Format(SG_T("%s_%lu_years"), output->Get_Name(), lyrs);
 			outputPath = SG_File_Make_Path(outputDir, ofname, CSG_String("tif")); 
 			if (save_snapshots)

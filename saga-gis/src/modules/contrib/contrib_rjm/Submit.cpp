@@ -130,12 +130,6 @@ CSubmit::CSubmit(void)
 
 	// read config file
 	ReadConfig();
-
-	// set some parameter defaults
-	Parameters("JOB_LIST")->asFilePath()->Set_Value(RJMJobList);
-	Parameters("PROJECT_CODE")->Set_Value(DefaultProjectCode);
-	Parameters("REMOTE_DIRECTORY")->Set_Value(DefaultRemoteDirectory);
-	Parameters("LOGFILE")->Set_Value(RJMLogFilePath);
 }
 
 
@@ -178,6 +172,16 @@ bool CSubmit::On_Execute(void)
 
 	if ( ModuleRefresh )
 	{
+		RemoteCommand = Parameters("COMMAND")->asString();
+		if (!RemoteCommand.is_Empty())
+		{
+			bool refresh = Message_Dlg_Confirm(CSG_String::Format(SG_T("%s"), _TL("Selected module is 'Refresh', no job will be submitted. Continue?")));
+			if (!refresh)
+			{
+				return false;
+			}
+		}
+
 		CSG_String modules = GetModules();
 		Parameters("MODULE")->asChoice()->Set_Items(modules);
 	} else {
@@ -287,7 +291,7 @@ bool CSubmit::On_Execute(void)
 		}
 
 		// command
-		CSG_String RJMCMD = CSG_String::Format(SG_T("\"\"%s\" -c \"%s\" -f \"%s\" -l \"%s\" -ll %s -w %s -m %dG -p %s -d \"%s\" -j %s\""), RJMBatchSubmit.c_str(), RemoteCommand.c_str(), RJMJobList.c_str(), RJMLogFilePath.c_str(), LogLevel.c_str(), Walltime.c_str(), Memory, ProjectCode.c_str(), RemoteDirectory.c_str(), JobType.c_str());
+		CSG_String RJMCMD = CSG_String::Format(SG_T("\"\"%s\" -c \"%s\" -f \"%s\" -l \"%s\" -ll \"%s\" -w \"%s\" -m %dG -p \"%s\" -d \"%s\" -j \"%s\"\""), RJMBatchSubmit.c_str(), RemoteCommand.c_str(), RJMJobList.c_str(), RJMLogFilePath.c_str(), LogLevel.c_str(), Walltime.c_str(), Memory, ProjectCode.c_str(), RemoteDirectory.c_str(), JobType.c_str());
 		Message_Add(CSG_String("Executing: ") + RJMCMD);
 		Process_Set_Text(CSG_String("Submitting job ..."));
 
@@ -508,7 +512,10 @@ bool CSubmit::GetParameterValues()
 	{
 		Message_Dlg(CSG_String::Format(SG_T("%s"), _TL("Command string is required.")));
 		return false;
-
+	} else if (RemoteCommand.Contains("\n") || RemoteCommand.Contains("\r"))
+	{
+		Message_Dlg(CSG_String::Format(SG_T("%s"), _TL("No new line characters allowed in command string. Please use ; if you need to separate commnads.")));
+		return false;
 	}
 
 	// remote dir
@@ -567,7 +574,7 @@ bool CSubmit::ConfigExists()
 
 void CSubmit::ReadConfig()
 {
-	
+
 	if (ConfigExists())
 	{
 		// read ini file
@@ -595,7 +602,13 @@ void CSubmit::ReadConfig()
 		// config retry
 		MaxAttempts = CSG_String(ini.GetValue("RETRY", "max_attempts", "")).asInt();		Parameters("MAX_ATTEMPTS")->Set_Value(MaxAttempts); 
 		MinWait = CSG_String(ini.GetValue("RETRY", "min_wait_s", "")).asDouble();				Parameters("MIN_WAIT")->Set_Value(MinWait); 
-		MaxWait = CSG_String(ini.GetValue("RETRY", "max_wait_s", "")).asDouble();				Parameters("MAX_WAIT")->Set_Value(MaxWait); 
+		MaxWait = CSG_String(ini.GetValue("RETRY", "max_wait_s", "")).asDouble();		
+
+		// set some parameter defaults
+		Parameters("JOB_LIST")->asFilePath()->Set_Value(RJMJobList);
+		Parameters("PROJECT_CODE")->Set_Value(DefaultProjectCode);
+		Parameters("REMOTE_DIRECTORY")->Set_Value(DefaultRemoteDirectory);
+		Parameters("LOGFILE")->Set_Value(RJMLogFilePath);		Parameters("MAX_WAIT")->Set_Value(MaxWait); 
 	}
 }
 
@@ -635,7 +648,7 @@ CSG_String CSubmit::GetModules()
 	CSG_String ErrorFile = SG_File_Make_Path(RJMTempDir, CSG_String("error"), CSG_String("txt"));
 	ErrorFile = SG_File_Get_Path_Absolute(ErrorFile);
 
-	CSG_String cmd = CSG_String::Format(SG_T("%s module avail >%s 2>%s"), RJMRunRemote.c_str(), OutFile.c_str(), ErrorFile.c_str());
+	CSG_String cmd = CSG_String::Format(SG_T("\"\"%s\" module avail >\"%s\" 2>\"%s\"\""), RJMRunRemote.c_str(), OutFile.c_str(), ErrorFile.c_str());
 	Message_Add(CSG_String("Executing: ") + cmd);
 
 	// run process

@@ -20,3 +20,4 @@
 *.idb
 saga-gis/bin
 *.ipch
+saga-gis/src/saga_core/saga_gui/bin
