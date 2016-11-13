@@ -63,7 +63,7 @@ public:
 	void Start();
 	void Step();
 	void PrintState(char* fname);
-	void Init(int nx, int ny, double xllcorner, double yllcorner, double deltax, double nodata);
+	void Init(int nx, int ny, double xllcorner, double yllcorner, double deltax, double nodata, double angle_degrees);
 
 };
 

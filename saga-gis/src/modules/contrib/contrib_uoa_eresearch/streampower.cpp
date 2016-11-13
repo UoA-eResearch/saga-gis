@@ -1,3 +1,4 @@
+#define _USE_MATH_DEFINES 
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
@@ -329,7 +330,7 @@ void StreamPower::Step()
 	topovecind = Indexx(topovec);
 
 
-	// todo
+	
 	for (int t = 0; t < lattice_size_x * lattice_size_y; t++)
 	{
 		i = topovecind[t] % lattice_size_x;
@@ -467,12 +468,12 @@ void StreamPower::PrintState(char* fname)
 void StreamPower::SetTopo(std::vector<std::vector<double>> t)
 {
 	
-	thresh = 0.58*deltax; // this should be somewhere else
+	//thresh = 0.58*deltax; // this is done in Init()
 
 	AssignVariables();
 	SetupGridNeighbors();
 	SetInitialValues(t);
-	//InitDiffusion();
+	//InitDiffusion(); // initial smoothing removes fine level detail, don't want that.
 
 }
 
@@ -577,7 +578,7 @@ void StreamPower::InitDiffusion()
 	}
 }
 
-void StreamPower::Init(int nx, int ny, double xllcorner, double yllcorner, double deltax, double nodata)
+void StreamPower::Init(int nx, int ny, double xllcorner, double yllcorner, double deltax, double nodata, double angle_degrees)
 {
 	lattice_size_y = ny;
 	lattice_size_x = nx;
@@ -586,7 +587,8 @@ void StreamPower::Init(int nx, int ny, double xllcorner, double yllcorner, doubl
 	StreamPower::deltax = deltax;
 	StreamPower::nodata = nodata;
 
-	thresh = 0.58*deltax;
+	double angle_radians = angle_degrees * M_PI / 180.0;
+	thresh = sin(angle_radians) * deltax; // 0.58*deltax // 30 degrees by default
 
 }
 
@@ -610,7 +612,7 @@ std::vector<std::vector<double>> StreamPower::ReadArcInfoASCIIGrid(char* fname)
 	in >> key; in >> dx;
 	in >> key; in >> nd;
 
-	Init(nx, ny, xc, yc, dx, nd);
+	Init(nx, ny, xc, yc, dx, nd, 30.0); // bit of a hack, threshold angle should be set somewhere else
 
 	t = std::vector<std::vector<double>>(lattice_size_x, std::vector<double>(lattice_size_y));
 
