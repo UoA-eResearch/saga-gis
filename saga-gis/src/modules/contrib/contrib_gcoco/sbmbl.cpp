@@ -1699,7 +1699,6 @@ bool CSBMBL::DoIteration()
 bool CSBMBL::ExportGrid(CSG_Grid* grid, CSG_String path)
 {
 	Message_Add(CSG_String::Format(SG_T("%s: '%s' "), _TL("Saving"), path.c_str()));
-
 	
 	// GDAL related options
 	TSG_Data_Type type = grid->Get_Type();
