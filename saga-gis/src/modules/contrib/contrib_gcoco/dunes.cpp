@@ -622,13 +622,13 @@ bool CDunes::On_Execute(void)
                     angles_cal(matrix, h, w_drop, angles, debug);// ! differences in values of the cell and its 4 neighbours
                     if (!w_drop && !h && angles[0] < -repose)
                     {
-                         matrix[h][width] += z_slab;
+                         matrix[h][width-1] += z_slab;
                          matrix[h][w_drop] -= z_slab;
                          w_drop=width-1;
                     }
                     else if (!w_drop && !h && angles[1] < -repose)
                     {
-                         matrix[height][w_drop] += z_slab;
+                         matrix[height-1][w_drop] += z_slab;
                          matrix[h][w_drop] -= z_slab;
                          h=height-1;
                     }
