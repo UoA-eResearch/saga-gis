@@ -52,6 +52,7 @@
 #include <random>
 
 #define NEIGHBOURS 4
+#define DEBUG false
 
 CDunes::CDunes(void)
 {
@@ -60,10 +61,11 @@ CDunes::CDunes(void)
 	Set_Description	(_TW("Giovanni's dune code"));
 
 	Parameters.Add_Grid(NULL, "INPUT"	, _TL("Input DEM"), _TL("Initial topography"), PARAMETER_INPUT);
-	Parameters.Add_Value(NULL, "COUNT", _TL("Output period"), _TL("Output period"), PARAMETER_TYPE_Int, 100, 1, true);
+	Parameters.Add_Value(NULL, "COUNT", _TL("Output Period"), _TL("Output period"), PARAMETER_TYPE_Int, 1000000, 1, true);
 	Parameters.Add_FilePath(NULL, "OUTPUT_DIR", _TL("Output Directory"), _TL("Directory used for saving regular GeoTIFF snaphots of the model as it progresses."), NULL, NULL, false, true, false); 
+	Parameters.Add_Value(NULL, "GRID_UPDATE", _TL("Grid Update Period"), _TL("How many frames pass before updating the grid view. Updating the grid more frequently will reduce performance."), PARAMETER_TYPE_Int, 10000, 1, true);
 	Parameters.Add_Value(NULL, "LSITES", _TL("L sites"), _TL("L sites"), PARAMETER_TYPE_Int, 5, 1, true);
-	Parameters.Add_Value(NULL, "NSLABS", _TL("Number of slabs"), _TL("Number of slabs"), PARAMETER_TYPE_Int, 1000, 1, true);
+	Parameters.Add_Value(NULL, "NSLABS", _TL("Number of slabs"), _TL("Number of slabs"), PARAMETER_TYPE_Int, 300000000, 1, true);
 	Parameters.Add_Value(NULL, "SHADOW", _TL("Shadow"), _TL("Shadow"), PARAMETER_TYPE_Double, 1.0, 0.0, true);
 	Parameters.Add_Value(NULL, "REPOSE", _TL("Repose"), _TL("Repose"), PARAMETER_TYPE_Double, 1.0, 0.0, true);
 	Parameters.Add_Value(NULL, "Z_SLAB", _TL("Z slab"), _TL("Z slab"), PARAMETER_TYPE_Double, 1.0, 0.0, true);
@@ -72,8 +74,11 @@ CDunes::CDunes(void)
 	Parameters.Add_Grid_Output(NULL, "OUTPUT", _TL("Output"), _TL("Simulation output"));
 
 	// for debugging
-	Parameters.Add_Table(NULL, "RANDOM", _TL("Random Number Data"), _TL("N x 1 column of random numbers. Used for testing results between implementations."), PARAMETER_INPUT_OPTIONAL);
-	Parameters.Add_Value(NULL, "DEBUG", _TL("Show Debug Output"), _TL("Shows information relevant for debugging"), PARAMETER_TYPE_Bool, false);
+	if (DEBUG)
+	{
+		Parameters.Add_Table(NULL, "RANDOM", _TL("Random Number Data"), _TL("N x 1 column of random numbers. Used for testing results between implementations."), PARAMETER_INPUT_OPTIONAL);
+		Parameters.Add_Value(NULL, "DEBUG", _TL("Show Debug Output"), _TL("Shows information relevant for debugging"), PARAMETER_TYPE_Bool, false);
+	}
 
 }
 
@@ -81,7 +86,16 @@ CDunes::~CDunes(void) {}
 
 void CDunes::print_matrix(CSG_Matrix& matrix)
 {
-	Message_Add(matrix.to_String());
+	//Message_Add(matrix.to_String());
+	Message_Add("");
+	for (int y = 0; y < matrix.Get_NY(); y++)
+	{
+		for (int x = 0; x < matrix.Get_NX(); x ++)
+		{
+			Message_Add(CSG_String::Format("%.0f ", matrix(y, x)), false);			
+		}
+		Message_Add("");
+	}	
 
 }
 
@@ -158,14 +172,19 @@ bool CDunes::On_Execute(void)
     double z_slab = Parameters("Z_SLAB")->asDouble();
 	double p_ns = Parameters("P_NS")->asDouble();
     double p_s = Parameters("P_S")->asDouble();
-    int addcount = Parameters("COUNT")->asInt();
+    int save_step = Parameters("COUNT")->asInt();
+	int view_step = Parameters("GRID_UPDATE")->asInt();
 	CSG_String outputDir = Parameters("OUTPUT_DIR")->asFilePath()->asString();
-
-	bool debug = false;
-
+	
 	// debugging
-	CSG_Table* random_numbers = Parameters("RANDOM")->asTable();
-	debug = Parameters("DEBUG")->asBool();
+	bool debug_output = false;
+	CSG_Table* random_numbers = NULL;
+
+	if (DEBUG)
+	{
+		random_numbers = Parameters("RANDOM")->asTable();
+		debug_output = Parameters("DEBUG")->asBool();
+	}
 
 	// internal
     unsigned long h = 0;
@@ -175,7 +194,8 @@ bool CDunes::On_Execute(void)
 	unsigned long w_drop = 0;
     double angles[NEIGHBOURS];
     char name[256]="";
-	int count = 0;
+	int save_count = 0; // when to save state
+	int view_count = 0; // when to update grid view
 	bool save_outputs = true;
 	CSG_Table_Record* record;
 	int rand_table_index = 0;
@@ -193,19 +213,20 @@ bool CDunes::On_Execute(void)
     for(unsigned long i = 0; Process_Get_Okay(true) && i < N_slabs; i++)
     {
 		CSG_String msg = CSG_String::Format(SG_T("Slab %d"), i+1);
-		Process_Set_Text(msg);
+		//Process_Set_Text(msg);
 
-		if (debug)
+		if (debug_output)
 		{
+			Message_Add("");
 			Message_Add(msg);
-			print_matrix(matrix);		
+			//print_matrix(matrix);		
 		}
 
 		if (random_numbers != NULL)
 		{
-			number1 = GetRandom(random_numbers, rand_table_index, debug);
+			number1 = GetRandom(random_numbers, rand_table_index, debug_output);
 			rand_table_index++;
-			number2 = GetRandom(random_numbers, rand_table_index, debug);
+			number2 = GetRandom(random_numbers, rand_table_index, debug_output);
 			rand_table_index++;
 		} else
 		{
@@ -234,7 +255,7 @@ bool CDunes::On_Execute(void)
                 w_move = w;
                 while(Process_Get_Okay(true))
                 {
-                    angles_cal(matrix, h_move, w_move, angles, debug);
+                    angles_cal(matrix, h_move, w_move, angles, debug_output);
                     if(!w_move && !h_move && angles[0] > repose)
                     {
                         matrix[h_move][width-1] -= z_slab;
@@ -346,7 +367,7 @@ bool CDunes::On_Execute(void)
 
 					if (random_numbers != NULL)
 					{
-						number3 = GetRandom(random_numbers, rand_table_index, debug);
+						number3 = GetRandom(random_numbers, rand_table_index, debug_output);
 						rand_table_index++;
 					} else
 					{
@@ -370,7 +391,7 @@ bool CDunes::On_Execute(void)
                 }   
                 while(Process_Get_Okay(true))
                 {
-                    angles_cal(matrix,h,w_drop,angles, debug); // ! differences in values of the cell and its 4 neighbours
+                    angles_cal(matrix,h,w_drop,angles, debug_output); // ! differences in values of the cell and its 4 neighbours
                     if(!w_drop && !h && angles[0] < -repose)
                     {
                         matrix[h][width-1] += z_slab;
@@ -484,7 +505,7 @@ bool CDunes::On_Execute(void)
                 //as long as eolian==1 (the angle of repose criterion is violated), neigbouring slabs are moving downslope
                 while(Process_Get_Okay(true))
                 {
-                    angles_cal(matrix,h_move,w_move,angles, debug);// ! differences in values of the cell and its 4 neighbours
+                    angles_cal(matrix,h_move,w_move,angles, debug_output);// ! differences in values of the cell and its 4 neighbours
                     if (!w_move && !h_move && angles[0] > repose)
                     {
                          matrix[h_move][width-1] -= z_slab;
@@ -596,7 +617,7 @@ bool CDunes::On_Execute(void)
 
 					if (random_numbers != NULL)
 					{
-						number3 = GetRandom(random_numbers, rand_table_index, debug);
+						number3 = GetRandom(random_numbers, rand_table_index, debug_output);
 						rand_table_index++;
 					} else
 					{
@@ -619,16 +640,16 @@ bool CDunes::On_Execute(void)
                 }
                 while(Process_Get_Okay(true))
                 {
-                    angles_cal(matrix, h, w_drop, angles, debug);// ! differences in values of the cell and its 4 neighbours
+                    angles_cal(matrix, h, w_drop, angles, debug_output);// ! differences in values of the cell and its 4 neighbours
                     if (!w_drop && !h && angles[0] < -repose)
                     {
-                         matrix[h][width] += z_slab;
+                         matrix[h][width-1] += z_slab;
                          matrix[h][w_drop] -= z_slab;
                          w_drop=width-1;
                     }
                     else if (!w_drop && !h && angles[1] < -repose)
                     {
-                         matrix[height][w_drop] += z_slab;
+                         matrix[height-1][w_drop] += z_slab;
                          matrix[h][w_drop] -= z_slab;
                          h=height-1;
                     }
@@ -724,7 +745,7 @@ bool CDunes::On_Execute(void)
             }
         }
 		
-        if(save_outputs && i==count)
+        if(save_outputs && i == save_count)
         {
 			CSG_String outputName = CSG_String::Format(SG_T("%s_%lu"), output->Get_Name(), i);
 			CSG_String outputPath = SG_File_Make_Path(outputDir, outputName, CSG_String("tif")); 
@@ -734,13 +755,19 @@ bool CDunes::On_Execute(void)
 				return false;
 			}	
 
-            count+=addcount;
+            save_count += save_step;
         }
-		
+
+		if (i == view_count)
+		{
+			MatrixToGrid(matrix, output);
+			DataObject_Update(output, true);
+			view_count += view_step;
+		}
+
 		double prog = (i / (double)N_slabs) * 100.0;
 		Set_Progress(std::max(prog, 1.0)); // show activity on progress bars
-		MatrixToGrid(matrix, output);
-		DataObject_Update(output, true);
+
     }  
 
 	return( true );
@@ -877,6 +904,6 @@ void CDunes::angles_cal(CSG_Matrix& matrix,int h_r,int w_r,double *angles, bool 
 	if (debug)
 	{
 		Message_Add(CSG_String::Format("%d %d", h_r+1, w_r+1));
-		//Message_Add(CSG_String::Format("%.0f %.0f %.0f %.0f", angles[0], angles[1], angles[2], angles[3]));
+		Message_Add(CSG_String::Format("%.0f %.0f %.0f %.0f", angles[0], angles[1], angles[2], angles[3]));
 	}
 }
