@@ -96,7 +96,7 @@ CSG_String Get_Info(int i)
 // 3. Include the headers of your modules here...
 
 #include "sbmbl.h"
-#include "dunes_model.h"
+#include "dunes.h"
 
 
 //---------------------------------------------------------
@@ -112,7 +112,7 @@ CSG_Module *		Create_Module(int i)
 	switch( i )
 	{
 	case 0:		return( new CSBMBL );
-	//case 1:		return( new CDunes );
+	case 1:		return( new CDunes );
 
 	default:	return( NULL );
 	}

@@ -312,15 +312,13 @@
     <ClInclude Include="..\..\..\saga_core\saga_api\shapes.h" />
     <ClInclude Include="..\..\..\saga_core\saga_api\table.h" />
     <ClInclude Include="..\..\..\saga_core\saga_api\tin.h" />
-    <ClInclude Include="array.h" />
-    <ClInclude Include="dunes_model.h" />
+    <ClInclude Include="dunes.h" />
     <ClInclude Include="MLB_Interface.h" />
     <ClInclude Include="sbmbl.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="array.cpp" />
-    <ClCompile Include="dune.cpp" />
-    <ClCompile Include="dunes_model.cpp" />
+    <ClCompile Include="dunes.cpp" />
     <ClCompile Include="MLB_Interface.cpp" />
     <ClCompile Include="sbmbl.cpp" />
   </ItemGroup>

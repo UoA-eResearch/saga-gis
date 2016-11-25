@@ -6,6 +6,11 @@
 #include <string.h>
 #include "array.h"
 
+/*
+
+Author: Gene Soudlenkov
+
+*/
 
 using namespace std;
 
