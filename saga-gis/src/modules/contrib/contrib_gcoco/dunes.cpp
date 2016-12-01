@@ -49,28 +49,34 @@
 
 #include "dunes.h"
 #include "gdal_driver.h"
-#include <random>
+#include <wx/image.h>
+#include <algorithm>
+#include <cmath>
 
 #define NEIGHBOURS 4
 #define DEBUG false
 
 CDunes::CDunes(void)
 {
-	Set_Name		(_TL("Dunes"));
+	Set_Name		(_TL("Aeolian Dunes"));
 	Set_Author		(SG_T("S. Masoud-Ansari, G. Soudlenkov, G. Coco, J. Tunnicliffe"));
-	Set_Description	(_TW("Giovanni's dune code"));
+	Set_Description	(_TW("Aeolian dune formation by Giovanni Coco"));
 
 	Parameters.Add_Grid(NULL, "INPUT"	, _TL("Input DEM"), _TL("Initial topography"), PARAMETER_INPUT);
-	Parameters.Add_Value(NULL, "COUNT", _TL("Output Period"), _TL("Output period"), PARAMETER_TYPE_Int, 1000000, 1, true);
+	Parameters.Add_Value(NULL, "COUNT", _TL("Output Period"), _TL("Output period"), PARAMETER_TYPE_Int, 1e6, 1, true);
 	Parameters.Add_FilePath(NULL, "OUTPUT_DIR", _TL("Output Directory"), _TL("Directory used for saving regular GeoTIFF snaphots of the model as it progresses."), NULL, NULL, false, true, false); 
-	Parameters.Add_Value(NULL, "GRID_UPDATE", _TL("Grid Update Period"), _TL("How many frames pass before updating the grid view. Updating the grid more frequently will reduce performance."), PARAMETER_TYPE_Int, 10000, 1, true);
+	Parameters.Add_Value(NULL, "SAVE_AS_IMAGE", _TL("Save as Image"), _TL("Save outputs as JPEG images"), PARAMETER_TYPE_Bool, true);
+	Parameters.Add_Value(NULL, "GRID_UPDATE", _TL("Grid Update Period"), _TL("How many frames pass before updating the grid view. Updating the grid more frequently will reduce performance."), PARAMETER_TYPE_Int, 1e6, 1, true);
 	Parameters.Add_Value(NULL, "LSITES", _TL("L sites"), _TL("L sites"), PARAMETER_TYPE_Int, 5, 1, true);
-	Parameters.Add_Value(NULL, "NSLABS", _TL("Number of slabs"), _TL("Number of slabs"), PARAMETER_TYPE_Int, 300000000, 1, true);
-	Parameters.Add_Value(NULL, "SHADOW", _TL("Shadow"), _TL("Shadow"), PARAMETER_TYPE_Double, 1.0, 0.0, true);
-	Parameters.Add_Value(NULL, "REPOSE", _TL("Repose"), _TL("Repose"), PARAMETER_TYPE_Double, 1.0, 0.0, true);
-	Parameters.Add_Value(NULL, "Z_SLAB", _TL("Z slab"), _TL("Z slab"), PARAMETER_TYPE_Double, 1.0, 0.0, true);
-    Parameters.Add_Value(NULL, "P_NS", _TL("p_ns"), _TL("p_ns"), PARAMETER_TYPE_Double, 0.4, 0.0, true);
-	Parameters.Add_Value(NULL, "P_S", _TL("p_s"), _TL("p_s"), PARAMETER_TYPE_Double, 0.6, 0.0, true);
+	Parameters.Add_Value(NULL, "NSLABS", _TL("Number of slabs"), _TL("Number of slabs"), PARAMETER_TYPE_Int, 3e8, 1, true);
+	Parameters.Add_Value(NULL, "SHADOW", _TL("Shadow"), _TL("Shadow"), PARAMETER_TYPE_Double, 1.0, 1.0, true);
+	Parameters.Add_Value(NULL, "REPOSE", _TL("Repose"), _TL("Repose"), PARAMETER_TYPE_Double, 1.0, 1.0, true);
+	Parameters.Add_Value(NULL, "Z_SLAB", _TL("Z Slab"), _TL("Depth of sand to remove per iteration"), PARAMETER_TYPE_Double, 1.0, 0.0, true);
+    //Parameters.Add_Value(NULL, "P_NS", _TL("p_ns"), _TL("p_ns"), PARAMETER_TYPE_Double, 0.4, 0.0, true);
+	Parameters.Add_Value(NULL, "P_S", _TL("p_s"), _TL("Probability of dropping grain when there is sand"), PARAMETER_TYPE_Double, 0.6, 0.0, true);
+	Parameters.Add_Value(NULL, "CHANGE_WIND_DIR", _TL("Change Wind Direction"), _TL("Whether to change the direction of the wind periodically"), PARAMETER_TYPE_Bool, false);
+	Parameters.Add_Value(NULL, "WIND_PERIOD_MIN", _TL("Wind Change Period Min"), _TL("Minimum wind change period"), PARAMETER_TYPE_Int, 1e6, 1, true);
+	Parameters.Add_Value(NULL, "WIND_PERIOD_MAX", _TL("Wind Change Period Max"), _TL("Maximum wind change period"), PARAMETER_TYPE_Int, 1e7, 1, true);
 	Parameters.Add_Grid_Output(NULL, "OUTPUT", _TL("Output"), _TL("Simulation output"));
 
 	// for debugging
@@ -79,12 +85,20 @@ CDunes::CDunes(void)
 		Parameters.Add_Table(NULL, "RANDOM", _TL("Random Number Data"), _TL("N x 1 column of random numbers. Used for testing results between implementations."), PARAMETER_INPUT_OPTIONAL);
 		Parameters.Add_Value(NULL, "DEBUG", _TL("Show Debug Output"), _TL("Shows information relevant for debugging"), PARAMETER_TYPE_Bool, false);
 	}
+	
+}
+
+CDunes::~CDunes(void)
+{
+
+	if (matrixp != NULL)
+	{
+		delete matrixp;
+	}
 
 }
 
-CDunes::~CDunes(void) {}
-
-void CDunes::print_matrix(CSG_Matrix& matrix)
+void CDunes::print_matrix(const CSG_Matrix& matrix)
 {
 	//Message_Add(matrix.to_String());
 	Message_Add("");
@@ -100,19 +114,19 @@ void CDunes::print_matrix(CSG_Matrix& matrix)
 }
 
 
-void CDunes::GridToMatrix(CSG_Grid* grid, CSG_Matrix& matrix)
+void CDunes::GridToMatrix(CSG_Grid* grid, const CSG_Matrix& matrix)
 {
 	for (int y = 0; y < grid->Get_NY(); y++)
 	{
 		for (int x = 0; x < grid->Get_NX(); x ++)
 		{
-			matrix[y][x] = grid->asDouble(y, x);
+			matrix[y][x] = std::max(0.0, grid->asDouble(y,x)); // negative values not allowed
 		}
 	}
 
 }
 
-void CDunes::MatrixToGrid(CSG_Matrix& matrix, CSG_Grid* grid)
+void CDunes::MatrixToGrid(const CSG_Matrix& matrix, CSG_Grid* grid)
 {
 	
 
@@ -149,10 +163,13 @@ double CDunes::GetRandom(CSG_Table* table, int index, bool debug)
 
 bool CDunes::On_Execute(void)
 {
+	matrixp = NULL;
 	CSG_Grid* grid_input = Parameters("INPUT")->asGrid();
 	int width = grid_input->Get_NX();
 	int height = grid_input->Get_NY();
-	CSG_Matrix matrix (width, height);
+
+	matrixp = new CSG_Matrix (width, height);
+	const CSG_Matrix& matrix = *matrixp;
 	GridToMatrix(grid_input, matrix);	
 
 	CSG_Grid* output = SG_Create_Grid(SG_DATATYPE_Float, grid_input->Get_NX(), grid_input->Get_NY(), grid_input->Get_Cellsize(), grid_input->Get_XMin(), grid_input->Get_YMin());
@@ -163,6 +180,11 @@ bool CDunes::On_Execute(void)
 
     std::default_random_engine generator;
     std::uniform_real_distribution<double> distribution(0.0,1.0);
+	std::uniform_int_distribution<int> wind_angle_distribution(0, 3);
+
+	int wind_update_min = Parameters("WIND_PERIOD_MIN")->asInt();
+	int wind_update_max = Parameters("WIND_PERIOD_MAX")->asInt();
+	std::uniform_int_distribution<int> wind_change_distribution(wind_update_min, wind_update_max);
 
 	// params
 	unsigned long N_slabs = (unsigned long)(Parameters("NSLABS")->asInt());
@@ -170,11 +192,14 @@ bool CDunes::On_Execute(void)
 	double shadow = Parameters("SHADOW")->asDouble();
     double repose = Parameters("REPOSE")->asDouble();
     double z_slab = Parameters("Z_SLAB")->asDouble();
-	double p_ns = Parameters("P_NS")->asDouble();
-    double p_s = Parameters("P_S")->asDouble();
+	double p_s = Parameters("P_S")->asDouble();
+	double p_ns = 1.0 - p_s;    
+	bool change_wind_dir = Parameters("CHANGE_WIND_DIR")->asBool();
     int save_step = Parameters("COUNT")->asInt();
 	int view_step = Parameters("GRID_UPDATE")->asInt();
 	CSG_String outputDir = Parameters("OUTPUT_DIR")->asFilePath()->asString();
+	bool save_as_image = Parameters("SAVE_AS_IMAGE")->asBool();
+
 	
 	// debugging
 	bool debug_output = false;
@@ -196,10 +221,13 @@ bool CDunes::On_Execute(void)
     char name[256]="";
 	int save_count = 0; // when to save state
 	int view_count = 0; // when to update grid view
+	int wind_update_count = 0;
 	bool save_outputs = true;
 	CSG_Table_Record* record;
 	int rand_table_index = 0;
 	double number1, number2, number3;
+
+
 
 	if (outputDir.is_Empty())
 	{
@@ -210,8 +238,10 @@ bool CDunes::On_Execute(void)
 		}
 	}
 
+
     for(unsigned long i = 0; Process_Get_Okay(true) && i < N_slabs; i++)
     {
+
 		CSG_String msg = CSG_String::Format(SG_T("Slab %d"), i+1);
 		//Process_Set_Text(msg);
 
@@ -748,11 +778,23 @@ bool CDunes::On_Execute(void)
         if(save_outputs && i == save_count)
         {
 			CSG_String outputName = CSG_String::Format(SG_T("%s_%lu"), output->Get_Name(), i);
-			CSG_String outputPath = SG_File_Make_Path(outputDir, outputName, CSG_String("tif")); 
+			CSG_String outputPath;
 
-			if(!ExportGrid(output, outputPath))
+			if (save_as_image)
 			{
-				return false;
+				outputPath = SG_File_Make_Path(outputDir, outputName, CSG_String("jpg"));
+				if(!ExportImage(output, outputPath))
+				{
+					return false;
+				}
+			}
+			else 
+			{
+				outputPath = SG_File_Make_Path(outputDir, outputName, CSG_String("tif"));
+				if(!ExportGrid(output, outputPath))
+				{
+					return false;
+				}
 			}	
 
             save_count += save_step;
@@ -764,13 +806,85 @@ bool CDunes::On_Execute(void)
 			DataObject_Update(output, true);
 			view_count += view_step;
 		}
+		
+		if (change_wind_dir && i == wind_update_count)
+		{
+			ChangeWindDirection(matrix, wind_angle_distribution(generator));
+			wind_update_count += wind_change_distribution(generator);
+		}
 
 		double prog = (i / (double)N_slabs) * 100.0;
 		Set_Progress(std::max(prog, 1.0)); // show activity on progress bars
 
     }  
 
+	if (matrixp != NULL)
+	{
+		delete matrixp;
+	}
+
 	return( true );
+}
+
+bool CDunes::ExportImage(CSG_Grid* pGrid, CSG_String path)
+{
+	Message_Add(CSG_String::Format(SG_T("%s: '%s' "), _TL("Saving"), path.c_str()));
+
+	CSG_Grid Grid;
+	if( !SG_UI_DataObject_asImage(pGrid, &Grid) )
+	{
+		Error_Set("could not retrieve colour coding from graphical user interface.");
+
+		return( false );
+	}
+
+	wxImage	Image(Grid.Get_NX(), Grid.Get_NY());
+
+	if( Grid.Get_NoData_Count() > 0 )
+	{
+		Image.SetAlpha();
+	}
+
+	for(int y = 0; y < Grid.Get_NY() && Set_Progress(y); y++)
+	{
+		//#pragma omp parallel for
+		for(int x = 0; x < Grid.Get_NX(); x++)
+		{
+			if( Grid.is_NoData(x, y))
+			{
+				if( Image.HasAlpha() )
+				{
+					Image.SetAlpha(x, y, wxIMAGE_ALPHA_TRANSPARENT);
+				}
+
+				Image.SetRGB(x, y, 255, 255, 255);
+			}
+			else
+			{
+				if( Image.HasAlpha() )
+				{
+					Image.SetAlpha(x, y, wxIMAGE_ALPHA_OPAQUE);
+				}
+
+				int	r, g, b, c	= Grid.asInt(x, y);
+
+				r	= SG_GET_R(c);
+				g	= SG_GET_G(c);
+				b	= SG_GET_B(c);
+
+				Image.SetRGB(x, y, r, g, b);
+			}
+		}
+	}
+
+	if( !Image.SaveFile(path.c_str()) )
+	{
+		Error_Set(CSG_String::Format(SG_T("%s [%s]"), _TL("could not save image file"), path.c_str()));
+
+		return( false );
+	}
+
+	return true;
 }
 
 bool CDunes::ExportGrid(CSG_Grid* grid, CSG_String path)
@@ -802,7 +916,7 @@ bool CDunes::ExportGrid(CSG_Grid* grid, CSG_String path)
 	return true;
 }
 
-void CDunes::angles_cal(CSG_Matrix& matrix,int h_r,int w_r,double *angles, bool debug)
+void CDunes::angles_cal(const CSG_Matrix& matrix,int h_r,int w_r,double *angles, bool debug)
 {
 /*    subroutine angles_cal (matrix, h_r, w_r, height, width, neigh, angles)
     ! DEALS WITH BOUNDARY CONDITIONS OF A 2-DIMENSIONAL MATRIX
@@ -825,9 +939,6 @@ void CDunes::angles_cal(CSG_Matrix& matrix,int h_r,int w_r,double *angles, bool 
 
     if (!w_r && !h_r)
     {
-
-
-
         left=matrix(h_r,width-1)-matrix(h_r,w_r);
         top=matrix(height-1,w_r)-matrix(h_r,w_r);
         right=matrix(h_r,w_r+1)-matrix(h_r,w_r);
@@ -906,4 +1017,53 @@ void CDunes::angles_cal(CSG_Matrix& matrix,int h_r,int w_r,double *angles, bool 
 		Message_Add(CSG_String::Format("%d %d", h_r+1, w_r+1));
 		Message_Add(CSG_String::Format("%.0f %.0f %.0f %.0f", angles[0], angles[1], angles[2], angles[3]));
 	}
+}
+
+void CDunes::ChangeWindDirection(const CSG_Matrix& matrix, int index)
+{
+	int sin_dir [4] = {0, 1, 0, -1}; // 0, pi/2, pi, 3pi/2
+	int cos_dir [4] = {1, 0, -1, 0}; // 0, pi/2, pi, 3pi/2
+
+	//CSG_String msg = CSG_String::Format(SG_T("Index %d -> (%d, %d)"), index, sin_dir[index], cos_dir[index]);
+	//Message_Add(msg);
+
+	CSG_Matrix rot (2, 2);
+	rot[0][0] = cos_dir[index];
+	rot[0][1] = -sin_dir[index];
+	rot[1][0] = sin_dir[index];
+	rot[1][1] = cos_dir[index];
+
+	CSG_Matrix pos (1, 2);
+	CSG_Matrix matrix_old = CSG_Matrix(matrix);
+
+	int yrot = 0;
+	int xrot = 0;
+
+    for(int y = 0; y < matrix.Get_NY(); y++)
+    {
+        for(int x = 0; x < matrix.Get_NX(); x++)
+        {
+			pos[0][0] = y;
+			pos[1][0] = x;				
+
+			pos = rot * pos;
+
+			yrot = pos[0][0];
+			xrot = pos[1][0];
+
+			if (yrot < 0)
+			{
+				yrot += matrix.Get_NY();
+			}
+
+			if (xrot < 0)
+			{
+				xrot += matrix.Get_NX();
+			}
+
+			matrix[yrot][xrot] = matrix_old(y, x);
+        }
+    }
+
+
 }
