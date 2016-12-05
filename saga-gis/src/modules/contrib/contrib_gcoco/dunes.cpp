@@ -168,7 +168,7 @@ bool CDunes::On_Execute(void)
 	int width = grid_input->Get_NX();
 	int height = grid_input->Get_NY();
 
-	matrixp = new CSG_Matrix (width, height);
+	matrixp = new CSG_Matrix (width, height); 
 	const CSG_Matrix& matrix = *matrixp;
 	GridToMatrix(grid_input, matrix);	
 
@@ -821,10 +821,13 @@ bool CDunes::On_Execute(void)
 	if (matrixp != NULL)
 	{
 		delete matrixp;
+		matrixp = NULL;
 	}
 
 	return( true );
 }
+
+
 
 bool CDunes::ExportImage(CSG_Grid* pGrid, CSG_String path)
 {
