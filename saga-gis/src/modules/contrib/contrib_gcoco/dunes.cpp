@@ -63,20 +63,20 @@ CDunes::CDunes(void)
 	Set_Description	(_TW("Aeolian dune formation by Giovanni Coco"));
 
 	Parameters.Add_Grid(NULL, "INPUT"	, _TL("Input DEM"), _TL("Initial topography"), PARAMETER_INPUT);
-	Parameters.Add_Value(NULL, "COUNT", _TL("Output Period"), _TL("Output period"), PARAMETER_TYPE_Int, 1e6, 1, true);
+	Parameters.Add_Value(NULL, "COUNT", _TL("Output Period"), _TL("How many cycles pass before saving output"), PARAMETER_TYPE_Int, 1, 1, true);
 	Parameters.Add_FilePath(NULL, "OUTPUT_DIR", _TL("Output Directory"), _TL("Directory used for saving regular GeoTIFF snaphots of the model as it progresses."), NULL, NULL, false, true, false); 
 	Parameters.Add_Value(NULL, "SAVE_AS_IMAGE", _TL("Save as Image"), _TL("Save outputs as JPEG images"), PARAMETER_TYPE_Bool, true);
-	Parameters.Add_Value(NULL, "GRID_UPDATE", _TL("Grid Update Period"), _TL("How many frames pass before updating the grid view. Updating the grid more frequently will reduce performance."), PARAMETER_TYPE_Int, 1e6, 1, true);
+	Parameters.Add_Value(NULL, "GRID_UPDATE", _TL("Grid Update Period"), _TL("How many cycles pass before updating the grid view. Updating the grid more frequently will reduce performance."), PARAMETER_TYPE_Int, 1, 1, true);
 	Parameters.Add_Value(NULL, "LSITES", _TL("L sites"), _TL("L sites"), PARAMETER_TYPE_Int, 5, 1, true);
-	Parameters.Add_Value(NULL, "NSLABS", _TL("Number of slabs"), _TL("Number of slabs"), PARAMETER_TYPE_Int, 3e8, 1, true);
+	Parameters.Add_Value(NULL, "NCYCLES", _TL("Number of cycles"), _TL("Used to convientely run very long simulations"), PARAMETER_TYPE_Int, 1e3, 1, true);
+	Parameters.Add_Value(NULL, "NSLABS", _TL("Iterations per cycle"), _TL("Number of 'slabs' to move per cycle"), PARAMETER_TYPE_Int, 1e4, 1, true);
 	Parameters.Add_Value(NULL, "SHADOW", _TL("Shadow"), _TL("Shadow"), PARAMETER_TYPE_Double, 1.0, 1.0, true);
 	Parameters.Add_Value(NULL, "REPOSE", _TL("Repose"), _TL("Repose"), PARAMETER_TYPE_Double, 1.0, 1.0, true);
 	Parameters.Add_Value(NULL, "Z_SLAB", _TL("Z Slab"), _TL("Depth of sand to remove per iteration"), PARAMETER_TYPE_Double, 1.0, 0.0, true);
-    //Parameters.Add_Value(NULL, "P_NS", _TL("p_ns"), _TL("p_ns"), PARAMETER_TYPE_Double, 0.4, 0.0, true);
 	Parameters.Add_Value(NULL, "P_S", _TL("p_s"), _TL("Probability of dropping grain when there is sand"), PARAMETER_TYPE_Double, 0.6, 0.0, true);
 	Parameters.Add_Value(NULL, "CHANGE_WIND_DIR", _TL("Change Wind Direction"), _TL("Whether to change the direction of the wind periodically"), PARAMETER_TYPE_Bool, false);
-	Parameters.Add_Value(NULL, "WIND_PERIOD_MIN", _TL("Wind Change Period Min"), _TL("Minimum wind change period"), PARAMETER_TYPE_Int, 1e6, 1, true);
-	Parameters.Add_Value(NULL, "WIND_PERIOD_MAX", _TL("Wind Change Period Max"), _TL("Maximum wind change period"), PARAMETER_TYPE_Int, 1e7, 1, true);
+	Parameters.Add_Value(NULL, "WIND_PERIOD_MIN", _TL("Wind Change Period Min"), _TL("Minimum wind change period (iterations)"), PARAMETER_TYPE_Int, 1e3, 1, true);
+	Parameters.Add_Value(NULL, "WIND_PERIOD_MAX", _TL("Wind Change Period Max"), _TL("Maximum wind change period (iterations)"), PARAMETER_TYPE_Int, 1e3, 1, true);
 	Parameters.Add_Grid_Output(NULL, "OUTPUT", _TL("Output"), _TL("Simulation output"));
 
 	// for debugging
@@ -168,7 +168,7 @@ bool CDunes::On_Execute(void)
 	int width = grid_input->Get_NX();
 	int height = grid_input->Get_NY();
 
-	matrixp = new CSG_Matrix (width, height);
+	matrixp = new CSG_Matrix (width, height); 
 	const CSG_Matrix& matrix = *matrixp;
 	GridToMatrix(grid_input, matrix);	
 
@@ -188,6 +188,7 @@ bool CDunes::On_Execute(void)
 
 	// params
 	unsigned long N_slabs = (unsigned long)(Parameters("NSLABS")->asInt());
+	unsigned long N_cycles = (unsigned long)(Parameters("NCYCLES")->asInt());
 	int l_sites = Parameters("LSITES")->asInt();
 	double shadow = Parameters("SHADOW")->asDouble();
     double repose = Parameters("REPOSE")->asDouble();
@@ -238,11 +239,12 @@ bool CDunes::On_Execute(void)
 		}
 	}
 
+	Set_Progress(1.0);
 
-    for(unsigned long i = 0; Process_Get_Okay(true) && i < N_slabs; i++)
-    {
+	for(unsigned long c = 0; Process_Get_Okay(true) && c < N_cycles; c++)
+	{
 
-		CSG_String msg = CSG_String::Format(SG_T("Slab %d"), i+1);
+		CSG_String msg = CSG_String::Format(SG_T("Cycle: %d"), c+1);
 		//Process_Set_Text(msg);
 
 		if (debug_output)
@@ -252,532 +254,554 @@ bool CDunes::On_Execute(void)
 			//print_matrix(matrix);		
 		}
 
-		if (random_numbers != NULL)
+		wind_update_count = 0;
+
+		for(unsigned long i = 0; Process_Get_Okay(true) && i < N_slabs; i++)
 		{
-			number1 = GetRandom(random_numbers, rand_table_index, debug_output);
-			rand_table_index++;
-			number2 = GetRandom(random_numbers, rand_table_index, debug_output);
-			rand_table_index++;
-		} else
-		{
-			number1 = distribution(generator); // height
-			number2 = distribution(generator); // width
-		}
+
+			CSG_String msg = CSG_String::Format(SG_T("Slab: %d"), i+1);
+
+			if (debug_output)
+			{
+				Message_Add("");
+				Message_Add(msg);
+				//print_matrix(matrix);		
+			}
+
+			if (random_numbers != NULL)
+			{
+				number1 = GetRandom(random_numbers, rand_table_index, debug_output);
+				rand_table_index++;
+				number2 = GetRandom(random_numbers, rand_table_index, debug_output);
+				rand_table_index++;
+			} else
+			{
+				number1 = distribution(generator); // height
+				number2 = distribution(generator); // width
+			}
 		
-		number1 *= height;
-		number2 *= width;
+			number1 *= height;
+			number2 *= width;
 
-        h=floor(number1);        		
-        w=floor(number2);
+			h=floor(number1);        		
+			w=floor(number2);
 
 
-        if(matrix(h,w) == 0)
+			if(matrix(h,w) == 0)
+			{
+				//if#3 no pick-ups when there is no sand
+				//matrix[h][w] = matrix(h,w); // i.e nothing happens
+			} 
+			else if(w == 0)
+			{
+				if(matrix(h,width-1) - matrix(h,w) < shadow)
+				{ 
+					matrix[h][w] -= z_slab;
+					h_move = h;
+					w_move = w;
+					while(Process_Get_Okay(true))
+					{
+						angles_cal(matrix, h_move, w_move, angles, debug_output);
+						if(!w_move && !h_move && angles[0] > repose)
+						{
+							matrix[h_move][width-1] -= z_slab;
+							matrix[h_move][w_move] += z_slab;
+							w_move=width-1;
+						}
+						else if(!w_move && !h_move && angles[1] > repose)
+						{
+							matrix[height-1][w_move] -= z_slab;
+							matrix[h_move][w_move] += z_slab;
+							h_move=height-1;
+						}
+						else if(w_move==width-1 &&  !h_move && angles[1] > repose)
+						{
+							matrix[height-1][w_move] -= z_slab;
+							matrix[h_move][w_move] += z_slab;
+							h_move=height-1;
+						}
+						else if (w_move==width-1 && !h_move &&  angles[2] > repose)
+						{
+							matrix[h_move][0] -= z_slab;
+							matrix[h_move][w_move] += z_slab;
+							w_move=0;
+						}
+						else if(w_move==width-1 && h_move==height-1 && angles[2] > repose)
+						{
+							matrix[h_move][0] -= z_slab;
+							matrix[h_move][w_move] += z_slab;
+							w_move=0;
+						}
+						else if(w_move==width-1 && h_move==height-1 && angles[3] > repose)
+						{
+							 matrix[0][w_move] -= z_slab;
+							 matrix[h_move][w_move] += z_slab;
+							 h_move=0;
+						}
+						else if(!w_move && h_move==height-1 && angles[0] > repose)
+						{
+							 matrix[h_move][width-1] -= z_slab;
+							 matrix[h_move][w_move] += z_slab;
+							 w_move=width-1;
+						}
+						else if(!w_move && h_move==height-1 && angles[3] > repose)
+						{
+							 matrix[0][w_move] -= z_slab;
+							 matrix[h_move][w_move] += z_slab;
+							 h_move=0;
+						}
+						else if(!w_move && angles[0] > repose)
+						{
+							 matrix[h_move][width-1] -= z_slab;
+							 matrix[h_move][w_move] += z_slab;
+							 w_move=width-1;
+						}
+						else if(!h_move && angles[1] > repose)
+						{ 
+							 matrix[height-1][w_move] -= z_slab;
+							 matrix[h_move][w_move] += z_slab;  
+							 h_move=height-1;
+						}
+						else if(w_move==width-1 && angles[2] > repose)
+						{
+							 matrix[h_move][0] -= z_slab;
+							 matrix[h_move][w_move] += z_slab;
+							 w_move=0;
+						}
+						else if(h_move==height-1 &&  angles[3] > repose)
+						{
+							 matrix[0][w_move] -= z_slab;
+							 matrix[h_move][w_move] += z_slab;
+							 h_move=0;
+						}
+						else if(angles[0] > repose)
+						{
+							 matrix[h_move][w_move-1] -= z_slab;
+							 matrix[h_move][w_move] += z_slab;
+							 w_move-=1;
+						}
+						else if(angles[1] > repose)
+						{
+							 matrix[h_move-1][w_move] -= z_slab;
+							 matrix[h_move][w_move] += z_slab;
+							 h_move-=1;
+						}
+						else if(angles[2] > repose)
+						{
+							 matrix[h_move][w_move+1] -= z_slab;
+							 matrix[h_move][w_move] += z_slab;
+							 w_move+=1;
+						}
+						else if(angles[3] > repose)
+						{
+							 matrix[h_move+1][w_move] -= z_slab;  
+							 matrix[h_move][w_move] += z_slab;
+							 h_move+=1;
+						}
+						else
+						{
+							 break;
+						}
+					}
+					w_drop = w + l_sites;//  !create new x-dimension of cell (l-number of lattice sites in transport direction)   
+					while(Process_Get_Okay(true))
+					{
+						if(w_drop > width-1)//! if#6 boundary 
+						{
+							w_drop -= width;
+						}
+
+						if (random_numbers != NULL)
+						{
+							number3 = GetRandom(random_numbers, rand_table_index, debug_output);
+							rand_table_index++;
+						} else
+						{
+							number3 = distribution(generator);
+						}
+
+
+						if(!matrix(h,w_drop) && number3 > p_ns) // ! if#7 if there is no sand, probability that slab cannot be settled is 1-p_ns
+						{
+							w_drop += l_sites;
+						}
+						else if(matrix(h,w_drop) > 0 && number3 > p_s) // ! if there is sand, probability that slab cannot be settled is 1-p_s
+						{
+							w_drop += l_sites; 
+						}
+						else
+						{
+							matrix[h][w_drop] += z_slab;
+							break;
+						}
+					}   
+					while(Process_Get_Okay(true))
+					{
+						angles_cal(matrix,h,w_drop,angles, debug_output); // ! differences in values of the cell and its 4 neighbours
+						if(!w_drop && !h && angles[0] < -repose)
+						{
+							matrix[h][width-1] += z_slab;
+							matrix[h][w_drop] -= z_slab;
+							w_drop=width-1;
+						}
+						else if (!w_drop && !h && angles[1] < -repose)
+						{
+							matrix[height-1][w_drop] += z_slab;
+							matrix[h][w_drop] -= z_slab;
+							h=height-1;
+						}
+						else if (w_drop==width-1 && !h && angles[1] < -repose)
+						{
+							matrix[height-1][w_drop] += z_slab;
+							matrix[h][w_drop] -= z_slab;
+							h=height-1;
+						}
+						else if (w_drop==width-1 && !h && angles[2] < -repose)
+						{
+							matrix[h][0] += z_slab;
+							matrix[h][w_drop] -= z_slab;
+							w_drop=0;
+						}
+						else if (w_drop==width-1 &&  h==height-1 &&  angles[2] < -repose)
+						{
+							matrix[h][0] += z_slab;
+							matrix[h][w_drop] -= z_slab;
+							w_drop=0;
+						}
+						else if (w_drop==width-1 && h==height-1 && angles[3] < -repose)
+						{
+							matrix[0][w_drop] += z_slab;
+							matrix[h][w_drop] -= z_slab;
+							h=0;
+						}
+						else if (!w_drop && h==height-1 && angles[0] < -repose)
+						{
+							matrix[h][width-1] += z_slab;
+							matrix[h][w_drop] -= z_slab;
+							w_drop=width-1;
+						}
+						else if (!w_drop && h==height-1 && angles[3] < -repose)
+						{
+							matrix[0][w_drop] += z_slab;
+							matrix[h][w_drop] -= z_slab;
+							h=0;
+						}
+						else if (!w_drop && angles[0] < -repose)
+						{
+							matrix[h][width-1] += z_slab;
+							matrix[h][w_drop] -= z_slab;
+							w_drop=width-1;
+						}
+						else if (!h && angles[1] < -repose)
+						{
+							 matrix[height-1][w_drop] += z_slab;
+							 matrix[h][w_drop] -= z_slab;
+							 h=height-1;
+						}
+						else if (w_drop==width-1 && angles[2] < -repose)
+						{
+							 matrix[h][0] += z_slab;
+							 matrix[h][w_drop] -= z_slab;
+							 w_drop=0;
+						}
+						else if (h==height-1 && angles[3] < -repose)
+						{
+							 matrix[0][w_drop] += z_slab;
+							 matrix[h][w_drop] -= z_slab;
+							 h=0;
+						}
+						else if (angles[0] < -repose)
+						{
+							 matrix[h][w_drop-1] += z_slab;
+							 matrix[h][w_drop] -= z_slab;
+							 w_drop--;
+						}
+						else if (angles[1] < -repose)
+						{
+							 matrix[h-1][w_drop] += z_slab;
+							 matrix[h][w_drop] -= z_slab;
+							 h--;
+						}
+						else if (angles[2] < -repose)
+						{
+							 matrix[h][w_drop+1] += z_slab;
+							 matrix[h][w_drop] -= z_slab;
+							 w_drop++;
+						}
+						else if (angles[3] < -repose)
+						{
+							 matrix[h+1][w_drop] += z_slab;  
+							 matrix[h][w_drop] -= z_slab;
+							 h++;
+						}
+						else
+						{
+							 break; 
+						}
+					}
+				}
+			}
+			else if (w > 0) 
+			{
+				if(matrix(h,w-1)-matrix(h,w) < shadow) // if#4 pick-ups when not in shadow zone
+				{ 
+					matrix[h][w] -= z_slab;// ! remove slab when there is a pick-up
+					h_move=h; // ! new name y-dimension of cell, so it can move around
+					w_move=w; // ! new name x-dimension of cell, so it can move around
+					//as long as eolian==1 (the angle of repose criterion is violated), neigbouring slabs are moving downslope
+					while(Process_Get_Okay(true))
+					{
+						angles_cal(matrix,h_move,w_move,angles, debug_output);// ! differences in values of the cell and its 4 neighbours
+						if (!w_move && !h_move && angles[0] > repose)
+						{
+							 matrix[h_move][width-1] -= z_slab;
+							 matrix[h_move][w_move] += z_slab;
+							 w_move=width-1;
+						}
+						else if (!w_move && !h_move &&  angles[1] > repose)
+						{
+							 matrix[height-1][w_move] -= z_slab;
+							 matrix[h_move][w_move] += z_slab;
+							 h_move=height-1;
+						}
+						else if (w_move==width-1 && !h_move && angles[1] > repose)
+						{
+							 matrix[height-1][w_move] -= z_slab;
+							 matrix[h_move][w_move] += z_slab;
+							 h_move=height-1;
+						}
+						else if (w_move==width-1 && !h_move && angles[2] > repose)
+						{
+							 matrix[h_move][0] -= z_slab;
+							 matrix[h_move][w_move] += z_slab;
+							 w_move=0;
+						}
+						else if (w_move==width-1 && h_move==height-1 && angles[2] > repose)
+						{
+							 matrix[h_move][0] -= z_slab;
+							 matrix[h_move][w_move] += z_slab;
+							 w_move=0;
+						}
+						else if (w_move==width-1 && h_move==height-1 && angles[3] > repose)
+						{
+							 matrix[0][w_move] -= z_slab;
+							 matrix[h_move][w_move] += z_slab;
+							 h_move=0;
+						}
+						else if (!w_move && h_move==height-1 && angles[0] > repose)
+						{
+							 matrix[h_move][width-1] -= z_slab;
+							 matrix[h_move][w_move] += z_slab;
+							 w_move=width-1;
+						}
+						else if (!w_move && h_move==height-1 && angles[3] > repose)
+						{
+							 matrix[0][w_move] -= z_slab;
+							 matrix[h_move][w_move] += z_slab;
+							 h_move=0;
+						}
+						else if (!w_move && angles[0] > repose)
+						{
+							 matrix[h_move][width-1] -= z_slab;
+							 matrix[h_move][w_move] += z_slab; 
+							 w_move=width-1;
+						}
+						else if (!h_move && angles[1] > repose)
+						{
+							 matrix[height-1][w_move] -= z_slab;
+							 matrix[h_move][w_move] += z_slab;
+							 h_move=height-1;
+						}
+						else if (w_move==width-1 &&  angles[2] > repose)
+						{
+							 matrix[h_move][0] -= z_slab;
+							 matrix[h_move][w_move] += z_slab;
+							 w_move=0;
+						}
+						else if (h_move==height-1 && angles[3] > repose)
+						{
+							 matrix[0][w_move] -= z_slab;
+							 matrix[h_move][w_move] += z_slab;
+							 h_move=0;
+						}
+						else if (angles[0] > repose)
+						{
+							 matrix[h_move][w_move-1] -= z_slab;
+							 matrix[h_move][w_move] += z_slab;
+							 w_move--;
+						}
+						else if (angles[1] > repose) 
+						{
+							 matrix[h_move-1][w_move] -= z_slab;
+							 matrix[h_move][w_move] += z_slab;
+							 h_move--;
+						}
+						else if (angles[2] > repose)
+						{
+							 matrix[h_move][w_move+1] -= z_slab;
+							 matrix[h_move][w_move] += z_slab;
+							 w_move++;
+						}
+						else if (angles[3] > repose)
+						{
+							 matrix[h_move+1][w_move] -= z_slab;  
+							 matrix[h_move][w_move] += z_slab;  
+							 h_move++;
+						}
+						else
+						{
+							 break;
+						}
+					}
+					w_drop= w + l_sites;//  !create new x-dimension of cell (l-number of lattice sites in transport direction)   
+					while(Process_Get_Okay(true))
+					{
+						if (w_drop > width - 1)
+						{
+							w_drop -= width;
+						}
+
+						if (random_numbers != NULL)
+						{
+							number3 = GetRandom(random_numbers, rand_table_index, debug_output);
+							rand_table_index++;
+						} else
+						{
+							number3 = distribution(generator);
+						}
+
+						if(!matrix(h,w_drop) && number3 > p_ns)//if#7 if there is no sand, probability that slab cannot be settled is 1-p_ns
+						{
+							w_drop += l_sites;
+						}
+						else if (matrix(h,w_drop) > 0 && number3 > p_s) // then ! if there is sand, probability that slab cannot be settled is 1-p_s
+						{
+							 w_drop+=l_sites;
+						}
+						else
+						{
+							 matrix[h][w_drop] += z_slab;
+							 break;
+						}
+					}
+					while(Process_Get_Okay(true))
+					{
+						angles_cal(matrix, h, w_drop, angles, debug_output);// ! differences in values of the cell and its 4 neighbours
+						if (!w_drop && !h && angles[0] < -repose)
+						{
+							 matrix[h][width-1] += z_slab;
+							 matrix[h][w_drop] -= z_slab;
+							 w_drop=width-1;
+						}
+						else if (!w_drop && !h && angles[1] < -repose)
+						{
+							 matrix[height-1][w_drop] += z_slab;
+							 matrix[h][w_drop] -= z_slab;
+							 h=height-1;
+						}
+						else if (w_drop==width-1 && !h && angles[1] < -repose)
+						{
+							 matrix[height-1][w_drop] += z_slab;
+							 matrix[h][w_drop] -= z_slab;
+							 h=height-1;
+						}
+						else if (w_drop==width-1 && !h && angles[2] < -repose)
+						{
+							 matrix[h][0] += z_slab;
+							 matrix[h][w_drop] -= z_slab;
+							 w_drop=0;
+						}
+						else if (w_drop==width-1 && h==height-1 && angles[2] < -repose)
+						{
+							 matrix[h][0] += z_slab;
+							 matrix[h][w_drop] -= z_slab;
+							 w_drop=0;
+						}
+						else if (w_drop==width-1 && h==height-1 && angles[3] < -repose)
+						{
+							 matrix[0][w_drop] += z_slab;
+							 matrix[h][w_drop] -= z_slab;
+							 h=0;
+						}
+						else if (!w_drop && h==height-1 && angles[0] < -repose)
+						{
+							 matrix[h][width-1] += z_slab;
+							 matrix[h][w_drop] -= z_slab;
+							 w_drop=width-1;
+						}
+						else if (!w_drop && h==height-1 && angles[3] < -repose)
+						{
+							 matrix[0][w_drop] += z_slab;
+							 matrix[h][w_drop] -= z_slab;
+							 h=0;
+						}
+						else if (!w_drop && angles[0] < -repose)
+						{
+							 matrix[h][width-1] += z_slab;
+							 matrix[h][w_drop] -= z_slab;
+							 w_drop=width-1;
+						}
+						else if (!h && angles[1] < -repose) 
+						{
+							 matrix[height-1][w_drop] += z_slab;
+							 matrix[h][w_drop] -= z_slab;
+							 h=height-1;
+						}
+						else if (w_drop==width-1 && angles[2] < -repose) 
+						{
+							 matrix[h][0] += z_slab;
+							 matrix[h][w_drop] -= z_slab;
+							 w_drop=0;
+						}
+						else if (h==height-1 && angles[3] < -repose) 
+						{
+							 matrix[0][w_drop] += z_slab;
+							 matrix[h][w_drop] -= z_slab;
+							 h=0;
+						}
+						else if (angles[0] < -repose)
+						{
+							 matrix[h][w_drop-1] += z_slab;
+							 matrix[h][w_drop] -= z_slab;
+							 w_drop--;
+						}
+						else if (angles[1] < -repose)
+						{
+							 matrix[h-1][w_drop] += z_slab;
+							 matrix[h][w_drop] -= z_slab;
+							 h--;
+						}
+						else if (angles[2] < -repose)
+						{
+							 matrix[h][w_drop+1] += z_slab;
+							 matrix[h][w_drop] -= z_slab;
+							 w_drop++;
+						}
+						else if (angles[3] < -repose)
+						{
+							 matrix[h+1][w_drop] += z_slab;
+							 matrix[h][w_drop] -= z_slab;
+							 h++;
+						}
+						else
+						{
+							 break;
+						}
+					}
+				}
+			}
+				
+			if (change_wind_dir && i == wind_update_count)
+			{
+				ChangeWindDirection(matrix, wind_angle_distribution(generator));
+				wind_update_count += wind_change_distribution(generator);
+			}
+
+		}  
+
+		if(save_outputs && c == save_count)
 		{
-			//if#3 no pick-ups when there is no sand
-            //matrix[h][w] = matrix(h,w);
-		} 
-		else if(w == 0)
-        {
-            if(matrix(h,width-1) - matrix(h,w) < shadow)
-            { 
-                matrix[h][w] -= z_slab;
-                h_move = h;
-                w_move = w;
-                while(Process_Get_Okay(true))
-                {
-                    angles_cal(matrix, h_move, w_move, angles, debug_output);
-                    if(!w_move && !h_move && angles[0] > repose)
-                    {
-                        matrix[h_move][width-1] -= z_slab;
-                        matrix[h_move][w_move] += z_slab;
-                        w_move=width-1;
-                    }
-                    else if(!w_move && !h_move && angles[1] > repose)
-                    {
-                        matrix[height-1][w_move] -= z_slab;
-                        matrix[h_move][w_move] += z_slab;
-                        h_move=height-1;
-                    }
-                    else if(w_move==width-1 &&  !h_move && angles[1] > repose)
-                    {
-                        matrix[height-1][w_move] -= z_slab;
-                        matrix[h_move][w_move] += z_slab;
-                        h_move=height-1;
-                    }
-                    else if (w_move==width-1 && !h_move &&  angles[2] > repose)
-                    {
-                        matrix[h_move][0] -= z_slab;
-                        matrix[h_move][w_move] += z_slab;
-                        w_move=0;
-                    }
-                    else if(w_move==width-1 && h_move==height-1 && angles[2] > repose)
-                    {
-                        matrix[h_move][0] -= z_slab;
-                        matrix[h_move][w_move] += z_slab;
-                        w_move=0;
-                    }
-                    else if(w_move==width-1 && h_move==height-1 && angles[3] > repose)
-                    {
-                         matrix[0][w_move] -= z_slab;
-                         matrix[h_move][w_move] += z_slab;
-                         h_move=0;
-                    }
-                    else if(!w_move && h_move==height-1 && angles[0] > repose)
-                    {
-                         matrix[h_move][width-1] -= z_slab;
-                         matrix[h_move][w_move] += z_slab;
-                         w_move=width-1;
-                    }
-                    else if(!w_move && h_move==height-1 && angles[3] > repose)
-                    {
-                         matrix[0][w_move] -= z_slab;
-                         matrix[h_move][w_move] += z_slab;
-                         h_move=0;
-                    }
-                    else if(!w_move && angles[0] > repose)
-                    {
-                         matrix[h_move][width-1] -= z_slab;
-                         matrix[h_move][w_move] += z_slab;
-                         w_move=width-1;
-                    }
-                    else if(!h_move && angles[1] > repose)
-                    { 
-                         matrix[height-1][w_move] -= z_slab;
-                         matrix[h_move][w_move] += z_slab;  
-                         h_move=height-1;
-                    }
-                    else if(w_move==width-1 && angles[2] > repose)
-                    {
-                         matrix[h_move][0] -= z_slab;
-                         matrix[h_move][w_move] += z_slab;
-                         w_move=0;
-                    }
-                    else if(h_move==height-1 &&  angles[3] > repose)
-                    {
-                         matrix[0][w_move] -= z_slab;
-                         matrix[h_move][w_move] += z_slab;
-                         h_move=0;
-                    }
-                    else if(angles[0] > repose)
-                    {
-                         matrix[h_move][w_move-1] -= z_slab;
-                         matrix[h_move][w_move] += z_slab;
-                         w_move-=1;
-                    }
-                    else if(angles[1] > repose)
-                    {
-                         matrix[h_move-1][w_move] -= z_slab;
-                         matrix[h_move][w_move] += z_slab;
-                         h_move-=1;
-                    }
-                    else if(angles[2] > repose)
-                    {
-                         matrix[h_move][w_move+1] -= z_slab;
-                         matrix[h_move][w_move] += z_slab;
-                         w_move+=1;
-                    }
-                    else if(angles[3] > repose)
-                    {
-                         matrix[h_move+1][w_move] -= z_slab;  
-                         matrix[h_move][w_move] += z_slab;
-                         h_move+=1;
-                    }
-                    else
-					{
-                         break;
-					}
-                }
-                w_drop = w + l_sites;//  !create new x-dimension of cell (l-number of lattice sites in transport direction)   
-                while(Process_Get_Okay(true))
-                {
-                    if(w_drop > width-1)//! if#6 boundary 
-					{
-                        w_drop -= width;
-					}
-
-					if (random_numbers != NULL)
-					{
-						number3 = GetRandom(random_numbers, rand_table_index, debug_output);
-						rand_table_index++;
-					} else
-					{
-						number3 = distribution(generator);
-					}
-
-
-                    if(!matrix(h,w_drop) && number3 > p_ns) // ! if#7 if there is no sand, probability that slab cannot be settled is 1-p_ns
-					{
-                        w_drop += l_sites;
-					}
-                    else if(matrix(h,w_drop) > 0 && number3 > p_s) // ! if there is sand, probability that slab cannot be settled is 1-p_s
-					{
-                        w_drop += l_sites; 
-					}
-                    else
-                    {
-                        matrix[h][w_drop] += z_slab;
-                        break;
-                    }
-                }   
-                while(Process_Get_Okay(true))
-                {
-                    angles_cal(matrix,h,w_drop,angles, debug_output); // ! differences in values of the cell and its 4 neighbours
-                    if(!w_drop && !h && angles[0] < -repose)
-                    {
-                        matrix[h][width-1] += z_slab;
-                        matrix[h][w_drop] -= z_slab;
-                        w_drop=width-1;
-                    }
-                    else if (!w_drop && !h && angles[1] < -repose)
-                    {
-                        matrix[height-1][w_drop] += z_slab;
-                        matrix[h][w_drop] -= z_slab;
-                        h=height-1;
-                    }
-                    else if (w_drop==width-1 && !h && angles[1] < -repose)
-                    {
-                        matrix[height-1][w_drop] += z_slab;
-                        matrix[h][w_drop] -= z_slab;
-                        h=height-1;
-                    }
-                    else if (w_drop==width-1 && !h && angles[2] < -repose)
-                    {
-                        matrix[h][0] += z_slab;
-                        matrix[h][w_drop] -= z_slab;
-                        w_drop=0;
-                    }
-                    else if (w_drop==width-1 &&  h==height-1 &&  angles[2] < -repose)
-                    {
-                        matrix[h][0] += z_slab;
-                        matrix[h][w_drop] -= z_slab;
-                        w_drop=0;
-                    }
-                    else if (w_drop==width-1 && h==height-1 && angles[3] < -repose)
-                    {
-                        matrix[0][w_drop] += z_slab;
-                        matrix[h][w_drop] -= z_slab;
-                        h=0;
-                    }
-                    else if (!w_drop && h==height-1 && angles[0] < -repose)
-                    {
-                        matrix[h][width-1] += z_slab;
-                        matrix[h][w_drop] -= z_slab;
-                        w_drop=width-1;
-                    }
-                    else if (!w_drop && h==height-1 && angles[3] < -repose)
-                    {
-                        matrix[0][w_drop] += z_slab;
-                        matrix[h][w_drop] -= z_slab;
-                        h=0;
-                    }
-                    else if (!w_drop && angles[0] < -repose)
-                    {
-                        matrix[h][width-1] += z_slab;
-                        matrix[h][w_drop] -= z_slab;
-                        w_drop=width-1;
-                    }
-                    else if (!h && angles[1] < -repose)
-                    {
-                         matrix[height-1][w_drop] += z_slab;
-                         matrix[h][w_drop] -= z_slab;
-                         h=height-1;
-                    }
-                    else if (w_drop==width-1 && angles[2] < -repose)
-                    {
-                         matrix[h][0] += z_slab;
-                         matrix[h][w_drop] -= z_slab;
-                         w_drop=0;
-                    }
-                    else if (h==height-1 && angles[3] < -repose)
-                    {
-                         matrix[0][w_drop] += z_slab;
-                         matrix[h][w_drop] -= z_slab;
-                         h=0;
-                    }
-                    else if (angles[0] < -repose)
-                    {
-                         matrix[h][w_drop-1] += z_slab;
-                         matrix[h][w_drop] -= z_slab;
-                         w_drop--;
-                    }
-                    else if (angles[1] < -repose)
-                    {
-                         matrix[h-1][w_drop] += z_slab;
-                         matrix[h][w_drop] -= z_slab;
-                         h--;
-                    }
-                    else if (angles[2] < -repose)
-                    {
-                         matrix[h][w_drop+1] += z_slab;
-                         matrix[h][w_drop] -= z_slab;
-                         w_drop++;
-                    }
-                    else if (angles[3] < -repose)
-                    {
-                         matrix[h+1][w_drop] += z_slab;  
-                         matrix[h][w_drop] -= z_slab;
-                         h++;
-                    }
-                    else
-					{
-                         break; 
-					}
-                }
-            }
-        }
-        else if (w > 0) 
-        {
-			if(matrix(h,w-1)-matrix(h,w) < shadow) // if#4 pick-ups when not in shadow zone
-            { 
-                matrix[h][w] -= z_slab;// ! remove slab when there is a pick-up
-                h_move=h; // ! new name y-dimension of cell, so it can move around
-                w_move=w; // ! new name x-dimension of cell, so it can move around
-                //as long as eolian==1 (the angle of repose criterion is violated), neigbouring slabs are moving downslope
-                while(Process_Get_Okay(true))
-                {
-                    angles_cal(matrix,h_move,w_move,angles, debug_output);// ! differences in values of the cell and its 4 neighbours
-                    if (!w_move && !h_move && angles[0] > repose)
-                    {
-                         matrix[h_move][width-1] -= z_slab;
-                         matrix[h_move][w_move] += z_slab;
-                         w_move=width-1;
-                    }
-                    else if (!w_move && !h_move &&  angles[1] > repose)
-                    {
-                         matrix[height-1][w_move] -= z_slab;
-                         matrix[h_move][w_move] += z_slab;
-                         h_move=height-1;
-                    }
-                    else if (w_move==width-1 && !h_move && angles[1] > repose)
-                    {
-                         matrix[height-1][w_move] -= z_slab;
-                         matrix[h_move][w_move] += z_slab;
-                         h_move=height-1;
-                    }
-                    else if (w_move==width-1 && !h_move && angles[2] > repose)
-                    {
-                         matrix[h_move][0] -= z_slab;
-                         matrix[h_move][w_move] += z_slab;
-                         w_move=0;
-                    }
-                    else if (w_move==width-1 && h_move==height-1 && angles[2] > repose)
-                    {
-                         matrix[h_move][0] -= z_slab;
-                         matrix[h_move][w_move] += z_slab;
-                         w_move=0;
-                    }
-                    else if (w_move==width-1 && h_move==height-1 && angles[3] > repose)
-                    {
-                         matrix[0][w_move] -= z_slab;
-                         matrix[h_move][w_move] += z_slab;
-                         h_move=0;
-                    }
-                    else if (!w_move && h_move==height-1 && angles[0] > repose)
-                    {
-                         matrix[h_move][width-1] -= z_slab;
-                         matrix[h_move][w_move] += z_slab;
-                         w_move=width-1;
-                    }
-                    else if (!w_move && h_move==height-1 && angles[3] > repose)
-                    {
-                         matrix[0][w_move] -= z_slab;
-                         matrix[h_move][w_move] += z_slab;
-                         h_move=0;
-                    }
-                    else if (!w_move && angles[0] > repose)
-                    {
-                         matrix[h_move][width-1] -= z_slab;
-                         matrix[h_move][w_move] += z_slab; 
-                         w_move=width-1;
-                    }
-                    else if (!h_move && angles[1] > repose)
-                    {
-                         matrix[height-1][w_move] -= z_slab;
-                         matrix[h_move][w_move] += z_slab;
-                         h_move=height-1;
-                    }
-                    else if (w_move==width-1 &&  angles[2] > repose)
-                    {
-                         matrix[h_move][0] -= z_slab;
-                         matrix[h_move][w_move] += z_slab;
-                         w_move=0;
-                    }
-                    else if (h_move==height-1 && angles[3] > repose)
-                    {
-                         matrix[0][w_move] -= z_slab;
-                         matrix[h_move][w_move] += z_slab;
-                         h_move=0;
-                    }
-                    else if (angles[0] > repose)
-                    {
-                         matrix[h_move][w_move-1] -= z_slab;
-                         matrix[h_move][w_move] += z_slab;
-                         w_move--;
-                    }
-					else if (angles[1] > repose) 
-                    {
-                         matrix[h_move-1][w_move] -= z_slab;
-                         matrix[h_move][w_move] += z_slab;
-                         h_move--;
-                    }
-                    else if (angles[2] > repose)
-                    {
-                         matrix[h_move][w_move+1] -= z_slab;
-                         matrix[h_move][w_move] += z_slab;
-                         w_move++;
-                    }
-                    else if (angles[3] > repose)
-                    {
-                         matrix[h_move+1][w_move] -= z_slab;  
-                         matrix[h_move][w_move] += z_slab;  
-                         h_move++;
-                    }
-                    else
-					{
-                         break;
-					}
-                }
-                w_drop= w + l_sites;//  !create new x-dimension of cell (l-number of lattice sites in transport direction)   
-                while(Process_Get_Okay(true))
-                {
-                    if (w_drop > width - 1)
-					{
-                        w_drop -= width;
-					}
-
-					if (random_numbers != NULL)
-					{
-						number3 = GetRandom(random_numbers, rand_table_index, debug_output);
-						rand_table_index++;
-					} else
-					{
-						number3 = distribution(generator);
-					}
-
-                    if(!matrix(h,w_drop) && number3 > p_ns)//if#7 if there is no sand, probability that slab cannot be settled is 1-p_ns
-					{
-						w_drop += l_sites;
-					}
-                    else if (matrix(h,w_drop) > 0 && number3 > p_s) // then ! if there is sand, probability that slab cannot be settled is 1-p_s
-					{
-                         w_drop+=l_sites;
-					}
-                    else
-                    {
-                         matrix[h][w_drop] += z_slab;
-                         break;
-                    }
-                }
-                while(Process_Get_Okay(true))
-                {
-                    angles_cal(matrix, h, w_drop, angles, debug_output);// ! differences in values of the cell and its 4 neighbours
-                    if (!w_drop && !h && angles[0] < -repose)
-                    {
-                         matrix[h][width-1] += z_slab;
-                         matrix[h][w_drop] -= z_slab;
-                         w_drop=width-1;
-                    }
-                    else if (!w_drop && !h && angles[1] < -repose)
-                    {
-                         matrix[height-1][w_drop] += z_slab;
-                         matrix[h][w_drop] -= z_slab;
-                         h=height-1;
-                    }
-                    else if (w_drop==width-1 && !h && angles[1] < -repose)
-                    {
-                         matrix[height-1][w_drop] += z_slab;
-                         matrix[h][w_drop] -= z_slab;
-                         h=height-1;
-                    }
-                    else if (w_drop==width-1 && !h && angles[2] < -repose)
-                    {
-                         matrix[h][0] += z_slab;
-                         matrix[h][w_drop] -= z_slab;
-                         w_drop=0;
-                    }
-                    else if (w_drop==width-1 && h==height-1 && angles[2] < -repose)
-                    {
-                         matrix[h][0] += z_slab;
-                         matrix[h][w_drop] -= z_slab;
-                         w_drop=0;
-                    }
-                    else if (w_drop==width-1 && h==height-1 && angles[3] < -repose)
-                    {
-                         matrix[0][w_drop] += z_slab;
-                         matrix[h][w_drop] -= z_slab;
-                         h=0;
-                    }
-                    else if (!w_drop && h==height-1 && angles[0] < -repose)
-                    {
-                         matrix[h][width-1] += z_slab;
-                         matrix[h][w_drop] -= z_slab;
-                         w_drop=width-1;
-                    }
-                    else if (!w_drop && h==height-1 && angles[3] < -repose)
-                    {
-                         matrix[0][w_drop] += z_slab;
-                         matrix[h][w_drop] -= z_slab;
-                         h=0;
-                    }
-                    else if (!w_drop && angles[0] < -repose)
-                    {
-                         matrix[h][width-1] += z_slab;
-                         matrix[h][w_drop] -= z_slab;
-                         w_drop=width-1;
-                    }
-					else if (!h && angles[1] < -repose) 
-                    {
-                         matrix[height-1][w_drop] += z_slab;
-                         matrix[h][w_drop] -= z_slab;
-                         h=height-1;
-                    }
-                    else if (w_drop==width-1 && angles[2] < -repose) 
-                    {
-                         matrix[h][0] += z_slab;
-                         matrix[h][w_drop] -= z_slab;
-                         w_drop=0;
-                    }
-                    else if (h==height-1 && angles[3] < -repose) 
-                    {
-                         matrix[0][w_drop] += z_slab;
-                         matrix[h][w_drop] -= z_slab;
-                         h=0;
-                    }
-                    else if (angles[0] < -repose)
-                    {
-                         matrix[h][w_drop-1] += z_slab;
-                         matrix[h][w_drop] -= z_slab;
-                         w_drop--;
-                    }
-                    else if (angles[1] < -repose)
-                    {
-                         matrix[h-1][w_drop] += z_slab;
-                         matrix[h][w_drop] -= z_slab;
-                         h--;
-                    }
-                    else if (angles[2] < -repose)
-                    {
-                         matrix[h][w_drop+1] += z_slab;
-                         matrix[h][w_drop] -= z_slab;
-                         w_drop++;
-                    }
-                    else if (angles[3] < -repose)
-                    {
-                         matrix[h+1][w_drop] += z_slab;
-                         matrix[h][w_drop] -= z_slab;
-                         h++;
-                    }
-                    else
-					{
-                         break;
-					}
-                }
-            }
-        }
-		
-        if(save_outputs && i == save_count)
-        {
-			CSG_String outputName = CSG_String::Format(SG_T("%s_%lu"), output->Get_Name(), i);
+			CSG_String outputName = CSG_String::Format(SG_T("%s_%lu"), output->Get_Name(), c);
 			CSG_String outputPath;
 
 			if (save_as_image)
@@ -797,34 +821,30 @@ bool CDunes::On_Execute(void)
 				}
 			}	
 
-            save_count += save_step;
-        }
+			save_count += save_step;
+		}
 
-		if (i == view_count)
+		if (c == view_count)
 		{
 			MatrixToGrid(matrix, output);
 			DataObject_Update(output, true);
 			view_count += view_step;
 		}
-		
-		if (change_wind_dir && i == wind_update_count)
-		{
-			ChangeWindDirection(matrix, wind_angle_distribution(generator));
-			wind_update_count += wind_change_distribution(generator);
-		}
 
-		double prog = (i / (double)N_slabs) * 100.0;
+		double prog = (c /(double)N_cycles) * 100.0;
 		Set_Progress(std::max(prog, 1.0)); // show activity on progress bars
-
-    }  
+	}
 
 	if (matrixp != NULL)
 	{
 		delete matrixp;
+		matrixp = NULL;
 	}
 
 	return( true );
 }
+
+
 
 bool CDunes::ExportImage(CSG_Grid* pGrid, CSG_String path)
 {
